@@ -77,7 +77,27 @@ table.rank th:last-child,table.rank td.pt{text-align:right}
 table.rank td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:baseline}
 table.rank td.pos{font-family:var(--f-display);font-weight:600;font-size:17px;width:3.2em}
 table.rank td.pt{color:var(--muted);white-space:nowrap}
-table.rank tr:nth-child(-n+10) .rn{font-weight:600}
+table.rank tr.prow:nth-child(-n+20) .pname{font-weight:600}
+.pname{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.pname:hover,.pname[aria-expanded="true"]{color:var(--accent);text-decoration-color:currentColor}
+td.mvc{width:3.2em;padding-left:0}
+.mv{font-size:11px;font-weight:600;white-space:nowrap}
+.mv.up,.dp.up{color:var(--done)}
+.mv.down,.dp.down{color:var(--live)}
+.mv.new{color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.dp{display:block;font-size:11px;font-weight:500}
+tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px solid var(--line)}
+.pd{display:flex;flex-direction:column;gap:8px}
+.pd h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.pd h4 b{font-size:20px;color:var(--ink)}
+.pd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pd-list li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.pd-list a{font-weight:600;text-decoration:none}
+.pd-list a:hover{color:var(--accent)}
+.pd-date{font-family:var(--f-display);font-weight:600;min-width:5.5em;color:var(--muted)}
+.pd-final{font-size:13px;color:var(--muted);flex-basis:100%;padding-left:calc(5.5em + 10px)}
+.pd-now a{font-weight:600}
+@media (max-width:520px){.pd-final{padding-left:0}}
 .playing{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--live);color:var(--bg);text-decoration:none;white-space:nowrap}
 .rank-search{display:flex;flex-direction:column;gap:4px}
 .rank-search input{font:inherit;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);min-width:0;width:240px;max-width:100%}
@@ -498,25 +518,60 @@ footer{color:var(--muted);font-size:12px}
   function viewRank(){
     const tours = state.tour==="all" ? ["atp","wta"] : [state.tour];
     const playing = playingNow();
+    const move = x => x.new ? `<span class="mv new" title="Новичок в топ-100">new</span>`
+      : x.d > 0 ? `<span class="mv up" title="Выше официального рейтинга на ${x.d}">▲${x.d}</span>`
+      : x.d < 0 ? `<span class="mv down" title="Ниже официального рейтинга на ${-x.d}">▼${-x.d}</span>` : `<span class="mv"></span>`;
+    const dpts = x => x.dp ? `<small class="dp ${x.dp>0?"up":"down"}">${x.dp>0?"+":"−"}${Math.abs(x.dp).toLocaleString("ru-RU")}</small>` : "";
     const cols = tours.map(tour=>{
       const rk = state.rankings[tour];
       if (!rk) return `<div class="state">Рейтинг ${tour.toUpperCase()} еще не загружен.</div>`;
+      const upd = rk.updatedAt ? new Date(rk.updatedAt).toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
+      const live = rk.kind==="live";
       return `<section class="rank-col">
-        <div class="rank-head"><h2><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span> одиночный разряд</h2><span class="hint">по данным на ${esc(fmtDay(rk.date))}</span></div>
-        <table class="rank"><thead><tr><th>Место</th><th>${tour==="wta"?"Теннисистка":"Теннисист"}</th><th>Очки</th></tr></thead><tbody>${
-          rk.list.map(x=>{ const t = playing[rkey(x.n)]; return `<tr data-q="${esc(rkey(x.n))}"><td class="pos">${x.r}</td><td><span class="rn">${esc(x.n)}</span>${t?`<a class="playing" href="#t-${esc(t.id)}">играет: ${esc(t.city.split(" (")[0])}</a>`:""}</td><td class="pt">${x.p.toLocaleString("ru-RU")}</td></tr>`; }).join("")
+        <div class="rank-head"><h2><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span> ${live?"лайв-рейтинг":"одиночный разряд"}</h2><span class="hint">${live?`обновлен ${esc(upd)}`:`по данным на ${esc(fmtDay(rk.date))}`}</span></div>
+        <table class="rank"><thead><tr><th>Место</th><th></th><th>${tour==="wta"?"Теннисистка":"Теннисист"}</th><th>Очки</th></tr></thead><tbody>${
+          rk.list.map(x=>{ const t = playing[rkey(x.n)]; return `<tr class="prow" data-q="${esc(rkey(x.n))}" data-tour="${tour}"><td class="pos">${x.r}</td><td class="mvc">${live?move(x):""}</td><td><button class="pname" type="button" aria-expanded="false" data-player="${esc(x.n)}">${esc(x.n)}</button>${t?`<a class="playing" href="#t-${esc(t.id)}">играет: ${esc(t.city.split(" (")[0])}</a>`:""}</td><td class="pt">${x.p.toLocaleString("ru-RU")}${live?dpts(x):""}</td></tr><tr class="pdetail" hidden><td colspan="4"></td></tr>`; }).join("")
         }</tbody></table></section>`;
     }).join("");
+    const anyLive = tours.some(t=>state.rankings[t] && state.rankings[t].kind==="live");
+    const off = tours.map(t=>state.rankings[t]).find(r=>r && r.officialDate);
     return `<section class="sec">
         <div class="sec-head"><h1>Рейтинг</h1><label class="rank-search"><span class="hint">Найти игрока</span><input id="rank-q" type="search" placeholder="например, Medvedev" autocomplete="off"></label></div>
-        <p class="hint">Топ-100 мужского и женского тура. Метка «играет» — игрок еще в сетке турнира, который идет сейчас. Место в рейтинге показано и в сетках рядом с именем.</p>
+        <p class="hint">${anyLive?`Лайв-рейтинг уже учитывает очки турниров, которые идут сейчас. Стрелка и число у очков показывают разницу с официальным рейтингом${off?` от ${esc(fmtDay(off.officialDate))}`:""}. `:""}Нажмите на имя, чтобы увидеть титулы игрока в этом сезоне.</p>
       </section>
       <div class="rank-grid ${tours.length>1?"two":""}">${cols}</div>`;
   }
+  function playerCard(name, tour){
+    const k = rkey(name);
+    const ts = (state.season ? state.season.tournaments : []).filter(t=>t.tour===tour);
+    const won = ts.filter(t=>t.champ && rkey(t.champ)===k);
+    const lost = ts.filter(t=>t.runner && rkey(t.runner)===k);
+    const playing = playingNow()[k];
+    const line = (t, finalTxt) => `<li><span class="pd-date">${fmtRange(t.start,t.end)}</span><a href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="cat" data-c="${esc(t.cat)}">${esc(catLabel(t))}</span>${finalTxt?`<span class="pd-final">${finalTxt}</span>`:""}</li>`;
+    const wonHtml = won.length ? `<ul class="pd-list">${won.map(t=>line(t, t.runner?`в финале ${esc(t.runner)}, ${esc(t.score||"")}`:"")).join("")}</ul>`
+      : `<p class="hint">В сезоне 2026 титулов на турнирах тура пока нет.</p>`;
+    const lostHtml = lost.length ? `<h4>Финалы без победы</h4><ul class="pd-list">${lost.map(t=>line(t, `${tour==="wta"?"проиграла":"проиграл"} ${esc(t.champ)}, ${esc(t.score||"")}`)).join("")}</ul>` : "";
+    return `<div class="pd">
+      <h4>Титулы в 2026 году <b>${won.length}</b></h4>${wonHtml}${lostHtml}
+      ${playing?`<p class="pd-now">Сейчас играет: <a href="#t-${esc(playing.id)}">${esc(playing.name)}</a></p>`:""}
+      <p class="hint">Учтены турниры основного тура: Большой шлем, 1000, 500, 250 и итоговые.</p></div>`;
+  }
+  app.addEventListener("click", e=>{
+    const b = e.target.closest(".pname"); if (!b) return;
+    const row = b.closest("tr"), det = row.nextElementSibling;
+    const open = b.getAttribute("aria-expanded")==="true";
+    if (open){ det.hidden = true; b.setAttribute("aria-expanded","false"); return; }
+    det.firstElementChild.innerHTML = playerCard(b.dataset.player, row.dataset.tour);
+    det.hidden = false; b.setAttribute("aria-expanded","true");
+  });
   app.addEventListener("input", e=>{
     if (e.target.id!=="rank-q") return;
     const q = rkey(e.target.value);
-    app.querySelectorAll("table.rank tbody tr").forEach(tr=>{ tr.hidden = !!q && !q.split(" ").every(w=>tr.dataset.q.includes(w)); });
+    app.querySelectorAll("table.rank tbody tr.prow").forEach(tr=>{
+      tr.hidden = !!q && !q.split(" ").every(w=>tr.dataset.q.includes(w));
+      const det = tr.nextElementSibling;
+      if (det && det.classList.contains("pdetail") && tr.hidden){ det.hidden = true; const b = tr.querySelector(".pname"); if (b) b.setAttribute("aria-expanded","false"); }
+    });
   });
 
   // ---------- bracket: collapsing & sections ----------
