@@ -1,7 +1,7 @@
 """Rebuilds data/tablo.json from documents exported from the Claude page database.
 
 Usage: python3 tools/build_bundle.py <export_folder>
-The folder must contain season/2026.json, season/2026-wta.json, draws/*.json and rankings/*.json
+The folder must contain season/2026.json, season/2026-wta.json, draws/*.json, rankings/*.json and results/*.json
 (the layout ArtifactData uses with out_dir).
 """
 import json, os, sys
@@ -25,7 +25,13 @@ if os.path.isdir(rdir):
     for f in sorted(os.listdir(rdir)):
         if f.endswith(".json"):
             rankings[f[:-5]] = json.load(open(os.path.join(rdir, f)))
+results = {}
+xdir = os.path.join(src, "results")
+if os.path.isdir(xdir):
+    for f in sorted(os.listdir(xdir)):
+        if f.endswith(".json"):
+            results[f[:-5]] = json.load(open(os.path.join(xdir, f))).get("players", {})
 updated = max(s.get("updatedAt", "") for s in seasons.values())
 out = os.path.join(root, "data", "tablo.json")
-json.dump({"updatedAt": updated, "seasons": seasons, "draws": draws, "rankings": rankings}, open(out, "w"), ensure_ascii=False, separators=(",", ":"))
+json.dump({"updatedAt": updated, "seasons": seasons, "draws": draws, "rankings": rankings, "results": results}, open(out, "w"), ensure_ascii=False, separators=(",", ":"))
 print("ok:", out, "| draws:", len(draws), "| updated:", updated)

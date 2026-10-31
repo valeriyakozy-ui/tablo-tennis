@@ -100,7 +100,7 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pd h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:baseline}
 .pd h4 b{font-size:20px;color:var(--ink)}
 .pd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.pd-list li{display:grid;grid-template-columns:6.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.pd-list li{display:grid;grid-template-columns:7.8em minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
 .pd-list li:last-child{border-bottom:0}
 .pd-name{font-weight:600;text-decoration:none;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
 @media (hover:hover){.pd-name:hover{text-decoration:underline;text-underline-offset:3px}}
@@ -148,7 +148,8 @@ tr.prow.fav td{background:color-mix(in srgb,var(--c-gs) 9%,transparent)}
 .pd-list .cat{font-size:11px;padding:1px 6px}
 .pd-sum{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted)}
 .pd-sum b{font-family:var(--f-display);font-size:20px;color:var(--ink);margin-right:2px}
-@media (max-width:520px){.pd-list li{grid-template-columns:6.2em minmax(0,1fr) auto;gap:8px}.pd-date{font-size:13px}}
+@media (max-width:520px){.pd-list li{grid-template-columns:7.4em minmax(0,1fr) auto;gap:8px}.pd-date{font-size:13px}}
+.pd-list .pd-name{overflow:hidden;text-overflow:ellipsis}
 .playing{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--live-soft);color:var(--live);text-decoration:none;white-space:nowrap}
 .rank-search{display:flex;flex-direction:column;gap:4px}
 .rank-search input{font:inherit;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);min-width:0;width:240px;max-width:100%}
@@ -322,6 +323,7 @@ body::before{background:var(--hd)}
 .install{border-color:rgba(255,255,255,.45)!important;color:#fff!important}
 h2{color:var(--ink)}
 .card,.now-card{border-color:var(--line)}
+
 </style>
 </head>
 <body>
@@ -371,7 +373,7 @@ h2{color:var(--ink)}
   const SURF = {hard:["Hard","--hard"],"hard-i":["Indoor hard","--hard-i"],clay:["Clay","--clay"],grass:["Grass","--grass"],mixed:["Various","--mixed"]};
   const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-  const state = {seasons:{}, season:null, draws:{}, rankings:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
+  const state = {seasons:{}, season:null, draws:{}, rankings:{}, results:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
   const rkey = n => String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[\s-]+/).filter(Boolean).sort().join(" ");
   let RANK = {};
   function buildRank(){ RANK = {}; for (const [tour,rk] of Object.entries(state.rankings)) (rk.list||[]).forEach(x=>{ RANK[rkey(x.n)] = {r:x.r, p:x.p, tour}; }); }
@@ -519,6 +521,34 @@ h2{color:var(--ink)}
       </section>`;
   }
 
+
+  // ---------- Google Calendar link for a match ----------
+  const APP_URL = "https://valeriyakozy-ui.github.io/tablo-tennis/";
+  function gcalUrl(t, r, m){
+    if (!m || m.w || m.st==="live" || m.st==="done") return "";
+    const day = m.t ? null : (m.d || null);
+    if (!m.t && !day) return "";
+    const nm = p => p && !p.tbd && p.n ? p.n : "TBD";
+    const text = `🎾 ${nm(m.a)} vs ${nm(m.b)} — ${t.name}, ${r.name}`;
+    let dates;
+    const z = d => d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+    if (m.t){
+      const st = new Date(m.t), hrs = t.cat==="gs" && t.tour==="atp" ? 3.5 : 2;
+      dates = `${z(st)}/${z(new Date(st.getTime()+hrs*3600e3))}`;
+    } else {
+      const a = new Date(day+"T00:00:00Z"), b = new Date(a.getTime()+864e5);
+      dates = `${day.replace(/-/g,"")}/${b.toISOString().slice(0,10).replace(/-/g,"")}`;
+    }
+    const lines = [`${t.name}, ${r.name}`];
+    if (m.nb) lines.push("Not before this time: the match follows the previous one on the court.");
+    if (!m.t) lines.push("Start time not announced yet.");
+    if (m.court) lines.push(`Court: ${m.court}`);
+    lines.push(`Order of play may change. Draw and live updates: ${APP_URL}#t-${t.id}`);
+    const q = {action:"TEMPLATE", text, dates, details:lines.join("\n"), location:[m.court, t.city].filter(Boolean).join(", ")};
+    return "https://calendar.google.com/calendar/render?" + Object.entries(q).map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
+  }
+  const gcalLink = (t,r,m) => { const u = gcalUrl(t,r,m); return u ? `<a class="gcal" href="${esc(u)}" target="_blank" rel="noopener" title="Add this match to Google Calendar">+ Calendar</a>` : ""; };
+
   function schedRow(t,r,m,withT){
     const time = m.t ? `${fmtTime(m.t)}${m.nb?"<small>not before</small>":""}` : `—<small>TBC</small>`;
     const a = m.a, b = m.b;
@@ -526,7 +556,8 @@ h2{color:var(--ink)}
     const who = (p,i) => { const fk = favable(p) ? rkey(p.n) : "";
       return `<span class="${m.w===i?"w":""}${fk && FAV[fk]?" fav":""}"${fk?` data-pk="${esc(fk)}"`:""}>${esc(plain(p))}${rkTag(p)}</span>`; };
     const players = `${who(a,1)}<span class="vs">—</span>${who(b,2)}`;
-    const res = m.st==="live" ? `<span class="pill live">Live</span>` : (m.w && m.sc ? esc(m.sc) : "");
+    const favIn = [a,b].some(p => favable(p) && FAV[rkey(p.n)]);
+    const res = m.st==="live" ? `<span class="pill live">Live</span>` : (m.w && m.sc ? esc(m.sc) : (favIn ? gcalLink(t,r,m) : ""));
     const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a>, `:"") + esc(r.name) + (m.court?`, ${esc(m.court)}`:"");
     return `<div class="mrow"><div class="time">${time}</div><div class="who"><div class="players">${players}</div><div class="ctx">${ctx}</div></div><div class="res">${res}</div></div>`;
   }
@@ -657,6 +688,15 @@ h2{color:var(--ink)}
   }
   const ROUND_LABEL = {"R128":"R128","R64":"R64","R32":"R32","R16":"R16","QF":"QF","SF":"SF","Final":"Final"};
   // How far a player went in one tournament: from its draw when the app has one, otherwise from the calendar
+  // full-season results of the top 20 (data "results": {tour: {player: [[tournament id, code], ...]}})
+  let RESIDX = null, RESSRC = null;
+  function seasonResult(t, k){
+    if (RESSRC !== state.results){ RESSRC = state.results; RESIDX = {};
+      for (const [tour, players] of Object.entries(state.results||{})) for (const [n, rows] of Object.entries(players||{})) (rows||[]).forEach(([id, c])=>{ RESIDX[id+"|"+rkey(n)] = c; }); }
+    const c = RESIDX[t.id+"|"+k]; if (!c) return null;
+    const MAP = {W:["W","Title",7], F:["F","Final",6], SF:["SF","SF",5], QF:["QF","QF",4], R16:["R","R16",3], "3R":["R","3R",2], "2R":["R","2R",1], "1R":["R","1R",0]};
+    const m = MAP[c]; return m ? {code:m[0], label:m[1], rank:m[2]} : null;
+  }
   function resultIn(t, k){
     const dr = state.draws[t.id];
     if (dr && dr.type==="knockout"){
@@ -675,6 +715,8 @@ h2{color:var(--ink)}
         return {code:"P", label:`playing, ${ROUND_LABEL[last.r.name]||last.r.name}`, rank:1};
       }
     }
+    const rr = seasonResult(t, k);
+    if (rr) return rr;
     if (t.champ && rkey(t.champ)===k) return {code:"W", label:"Title", rank:7};
     if (t.runner && rkey(t.runner)===k) return {code:"F", label:"Final", rank:6};
     if ((t.sf||[]).some(n=>rkey(n)===k)) return {code:"SF", label:"SF", rank:5};
@@ -690,11 +732,11 @@ h2{color:var(--ink)}
     const short = t => t.cat==="gs" ? "Grand Slam" : catLabel(t);
     const tip = (t,res) => res.code==="W" && t.runner ? `d. ${t.runner} ${t.score||""}` : res.code==="F" && t.champ ? `lost to ${t.champ} ${t.score||""}` : "";
     const list = rows.length ? `<ul class="pd-list">${rows.map(({t,res})=>`<li class="r-${res.code}" title="${esc([short(t), tip(t,res)].filter(Boolean).join(". "))}"><span class="pd-date">${fmtRange(t.start,t.end)}</span><a class="pd-name" data-g="${esc(GROUP[t.cat]||"")}" href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="pd-res">${esc(res.label)}</span></li>`).join("")}</ul>`
-      : `<p class="hint">No tour-level quarterfinals or better in 2026 yet.</p>`;
+      : `<p class="hint">No tour-level results in 2026 yet.</p>`;
     return `<div class="pd">
       <div class="pd-sum"><span><b>${titles}</b> ${titles===1?"title":"titles"}</span><span><b>${finals}</b> ${finals===1?"lost final":"lost finals"}</span><span><b>${semis}</b> ${semis===1?"semifinal":"semifinals"}</span></div>
       ${list}
-      <p class="hint">Tour-level events in 2026. Every round is shown for tournaments with a draw in the app; for the rest, results start at the quarterfinals.</p></div>`;
+      <p class="hint">Tour-level events in 2026. For the top 20, every tournament played is listed, including early exits (1R, 2R, 3R, R16 = the round lost in). For other players, results start at the quarterfinals, plus every round in draws shown in the app.</p></div>`;
   }
   app.addEventListener("click", e=>{
     const pt = e.target.closest("[data-pick-tour]");
@@ -763,7 +805,7 @@ h2{color:var(--ink)}
         const day = dayOfMatch(nx.m);
         const when = nx.m.st==="live" ? `<span class="pill live">Live</span>` : nx.m.t ? `${day===today?"Today":esc(fmtShort(day))}, ${nx.m.nb?"not before ":""}${fmtTime(nx.m.t)}` : day ? `${esc(fmtShort(day))}, time TBC` : "Date TBC";
         const opp = nx.opp && nx.opp.tbd ? "opponent TBD" : `vs ${esc(plain(nx.opp))}`;
-        info = `<a href="#t-${esc(nx.t.id)}" data-g="${esc(GROUP[nx.t.cat]||"")}">${esc(nx.t.name)}</a><span>${esc(nx.r.name)}</span><span>${when}</span><span class="hint">${opp}</span>`;
+        info = `<a href="#t-${esc(nx.t.id)}" data-g="${esc(GROUP[nx.t.cat]||"")}">${esc(nx.t.name)}</a><span>${esc(nx.r.name)}</span><span>${when}</span><span class="hint">${opp}</span>${gcalLink(nx.t,nx.r,nx.m)}`;
         sortKey = nx.m.st==="live" ? "0" : nx.when;
       }
       return {sortKey, name, nx, html:`<div class="mine-row" data-pk="${esc(k)}"><span class="star-static" aria-hidden="true">★</span><b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
@@ -836,6 +878,7 @@ h2{color:var(--ink)}
   }
 
   // ---------- routing ----------
+
   function route(){
     const h = (location.hash||"").replace(/^#/,"");
     document.querySelectorAll("[data-nav]").forEach(a=>{
@@ -902,7 +945,7 @@ h2{color:var(--ink)}
       const r = await fetch("data/tablo.json?ts=" + Date.now(), {cache:"no-store"});
       if (!r.ok) throw new Error(r.status);
       const j = await r.json();
-      state.seasons = j.seasons || {}; state.draws = j.draws || {}; state.rankings = j.rankings || {}; buildRank();
+      state.seasons = j.seasons || {}; state.draws = j.draws || {}; state.rankings = j.rankings || {}; state.results = j.results || {}; buildRank();
       state.err = null; rebuild(); setStamp();
       const y = window.scrollY; route(); window.scrollTo(0, y);
     }catch(e){
