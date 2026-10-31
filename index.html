@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Табло ATP и WTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
+<meta name="description" content="Календарь ATP и WTA, сетки турниров и расписание матчей с временем в вашем часовом поясе">
+<meta name="theme-color" content="#13283f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Табло">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{color-scheme:light}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+.install{background:none;border:1px solid color-mix(in srgb,var(--board-muted) 55%,transparent);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--board-ink)}
+.ios-tip{background:var(--board-ink);color:var(--board);border-radius:var(--r);padding:10px 14px;font-size:14px;width:100%}
+/* Layout: scoreboard header, then one working column (max 1100px); brackets scroll sideways inside their own frame */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#e4e9ee; --ink:#14202e; --muted:#5a6777; --line:#d3dae2;
+  --accent:#1f5fa8; --accent-ink:#ffffff; --live:#c8432a; --done:#3f7d4c;
+  --hard:#2f6db3; --hard-i:#5b5aa6; --clay:#c2653a; --grass:#3f8a4a; --mixed:#7a8796;
+  --board:#13283f; --board-ink:#f2f5f8; --board-muted:#a9b8c8; --atp:#2f6db3; --wta:#a2417a;
+  --f-display:"Fira Sans Extra Condensed","Arial Narrow","Roboto Condensed",sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --surface:#16202b; --sunk:#111922; --ink:#e6ebf1; --muted:#97a5b5; --line:#283544;
+  --accent:#6ea6ea; --accent-ink:#0b1622; --live:#ff7b5e; --done:#7cc48a;
+  --hard:#6d9fe0; --hard-i:#9a98e6; --clay:#e08a5f; --grass:#77bd7f; --mixed:#9aa7b6;
+  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --surface:#16202b; --sunk:#111922; --ink:#e6ebf1; --muted:#97a5b5; --line:#283544;
+  --accent:#6ea6ea; --accent-ink:#0b1622; --live:#ff7b5e; --done:#7cc48a;
+  --hard:#6d9fe0; --hard-i:#9a98e6; --clay:#e08a5f; --grass:#77bd7f; --mixed:#9aa7b6;
+  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--board)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.board{background:var(--board);color:var(--board-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.board .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:12px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.02em;text-transform:uppercase;line-height:1;display:flex;align-items:baseline;gap:10px}
+.brand small{font-family:var(--f-body);font-weight:500;font-size:12px;letter-spacing:.06em;color:var(--board-muted);text-transform:uppercase}
+.nav{display:flex;gap:4px;margin-left:auto}
+.nav a{text-decoration:none;padding:7px 12px;border-radius:999px;font-size:14px;font-weight:500;color:var(--board-muted)}
+.nav a[aria-current="page"]{background:var(--board-ink);color:var(--board)}
+.nav a:hover{color:var(--board-ink)}
+.stamp{font-size:12px;color:var(--board-muted);width:100%}
+.tours{display:flex;border:1px solid color-mix(in srgb,var(--board-muted) 45%,transparent);border-radius:999px;padding:2px}
+.tours button{background:none;border:0;padding:5px 12px;border-radius:999px;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;color:var(--board-muted);cursor:pointer}
+.tours button[aria-pressed="true"]{background:var(--wta-on,var(--board-ink));color:var(--board)}
+.tours button[data-tour="wta"][aria-pressed="true"]{background:var(--wta)}
+.tours button[data-tour="atp"][aria-pressed="true"]{background:var(--atp)}
+.tour{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--atp)}
+.tour[data-t="wta"]{color:var(--wta)}
+
+main.wrap{padding-block:20px 48px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:34px}
+h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
+.sec{display:flex;flex-direction:column;gap:12px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:13px}
+
+.state{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:20px;color:var(--muted)}
+
+/* category + surface marks */
+.cat{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;border:1px solid var(--line);white-space:nowrap;color:var(--ink)}
+.cat[data-c="gs"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cat[data-c="m1000"],.cat[data-c="finals"],.cat[data-c="w1000"],.cat[data-c="wfinals"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.surf{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.surf::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--c,var(--mixed))}
+.pts{font-size:12px;color:var(--muted);white-space:nowrap}
+
+/* live tournament cards */
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;text-decoration:none;min-width:0}
+.tcard:hover{border-color:var(--accent)}
+.tcard h3{font-size:22px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.pill{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.live{background:var(--live);color:var(--bg)}
+.pill.done{background:transparent;color:var(--done);border:1px solid var(--done)}
+
+/* day schedule */
+.days{display:flex;flex-direction:column;gap:18px}
+.day h3{font-size:18px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-bottom:6px;border-bottom:2px solid var(--ink);margin-bottom:4px}
+.day h3 b{color:var(--ink);font-weight:600}
+.mrow{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:4px 14px;align-items:start;padding:10px 2px;border-bottom:1px solid var(--line)}
+.mrow .time{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.1}
+.mrow .time small{display:block;font-family:var(--f-body);font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.mrow .who{min-width:0}
+.mrow .players{font-weight:500}
+.mrow .players .w{font-weight:600}
+.mrow .players .vs{color:var(--muted);font-weight:400;padding:0 6px}
+.mrow .ctx{font-size:13px;color:var(--muted)}
+.mrow .ctx a{text-decoration:underline;text-underline-offset:2px}
+.mrow .res{text-align:right;font-size:14px}
+@media (max-width:520px){.mrow{grid-template-columns:64px minmax(0,1fr)}.mrow .res{grid-column:2;text-align:left}}
+
+/* season */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:999px;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.month h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.trow{display:grid;grid-template-columns:118px minmax(0,1.3fr) minmax(0,1fr);gap:4px 16px;padding:11px 2px;border-bottom:1px solid var(--line);text-decoration:none;align-items:start}
+.trow:hover .tname{color:var(--accent)}
+.trow .dates{font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.2}
+.trow .tname{font-weight:600}
+.trow .meta{font-size:13px;color:var(--muted)}
+.trow .out{font-size:14px;min-width:0}
+.trow .out .lbl{font-size:12px;color:var(--muted)}
+.trow[data-st="live"]{background:linear-gradient(90deg,color-mix(in srgb,var(--live) 9%,transparent),transparent 60%)}
+@media (max-width:640px){.trow{grid-template-columns:84px minmax(0,1fr)}.trow .out{grid-column:2}}
+
+/* tournament page */
+.back{font-size:14px;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--accent)}
+.thead{display:flex;flex-direction:column;gap:10px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
+.facts div{display:flex;flex-direction:column}
+.facts .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note{background:var(--surface);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 var(--r) var(--r) 0;font-size:14px;max-width:72ch}
+.champ{background:var(--board);color:var(--board-ink);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:4px;max-width:520px}
+.champ .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--board-muted)}
+.champ b{font-family:var(--f-display);font-size:28px;font-weight:600}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;padding:10px 14px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+.bracket-frame{overflow-x:auto;padding-bottom:8px;margin-inline:-4px}
+.bracket{display:flex;gap:14px;padding:4px;min-height:120px}
+.bcol{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 0 224px;max-width:320px}
+.colhead{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:2px 2px 6px;margin-bottom:2px;cursor:pointer;text-align:left}
+.colhead b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.colhead span{font-size:12px;color:var(--muted)}
+.colhead:hover span{color:var(--accent)}
+.colhead[data-now="1"] b{color:var(--accent)}
+.bcol-c{flex:0 0 46px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0;background:var(--sunk);border:1px dashed var(--line);border-radius:8px;cursor:pointer;color:var(--muted)}
+.bcol-c:hover{border-color:var(--accent);color:var(--accent)}
+.bcol-c .v{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;gap:10px;align-items:center;white-space:nowrap}
+.bcol-c b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.bcol-c small{font-size:12px}
+.bcol-c .plus{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1}
+.btools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.btools .chips{flex:1 1 auto}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--accent);font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+@media (prefers-reduced-motion:no-preference){.bcol-c,.colhead span{transition:color .15s,border-color .15s}}
+.bcol .stack{display:flex;flex-direction:column;justify-content:space-around;gap:8px;flex:1}
+.mt{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13.5px}
+.mt.live{border-color:var(--live)}
+.mt .p{display:flex;align-items:center;gap:6px;padding:5px 9px;min-height:28px}
+.mt .p + .p{border-top:1px solid var(--line)}
+.mt .p .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt .p.win .nm{font-weight:600}
+.mt .p.win::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--done);flex:none}
+.mt .p.lose .nm{color:var(--muted)}
+.mt .p.empty .nm{color:var(--muted);font-style:italic}
+.sd{font-size:11px;font-weight:600;color:var(--muted);min-width:14px}
+.tag{font-size:10px;font-weight:600;letter-spacing:.04em;padding:0 4px;border-radius:3px;background:var(--sunk);color:var(--muted)}
+.mt .foot{background:var(--sunk);padding:4px 9px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.mt .foot .sc{color:var(--ink);font-weight:500}
+.mt .foot .lv{color:var(--live);font-weight:600}
+
+.listr{display:flex;flex-direction:column;gap:20px}
+.lr h3{font-size:18px;padding-bottom:6px;border-bottom:2px solid var(--ink);margin-bottom:4px}
+.lrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 14px;padding:9px 2px;border-bottom:1px solid var(--line);align-items:baseline}
+.lrow .run{font-family:var(--f-display);font-weight:600;font-size:18px}
+.lrow .pt{font-size:12px;color:var(--muted)}
+@media (max-width:520px){.lrow{grid-template-columns:minmax(0,1fr) auto}.lrow .pt{display:none}}
+
+footer{color:var(--muted);font-size:12px}
+@media (prefers-reduced-motion:no-preference){.tcard,.trow,.chip{transition:border-color .15s,background-color .15s,color .15s}}
+</style>
+</head>
+<body>
+<header class="board">
+  <div class="wrap">
+    <div class="brand">Табло ATP · WTA <small>сезон 2026</small></div>
+    <div class="tours" role="group" aria-label="Тур">
+      <button type="button" data-tour="all">Все</button>
+      <button type="button" data-tour="atp">ATP</button>
+      <button type="button" data-tour="wta">WTA</button>
+    </div>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#now" data-nav="now">Сейчас</a>
+      <a href="#season" data-nav="season">Календарь</a>
+    </nav>
+    <button class="install" id="install" type="button" hidden>Установить приложение</button>
+    <div class="stamp" id="stamp">Загружаю данные…</div>
+    <div class="ios-tip" id="ios-tip" hidden>На iPhone и iPad: нажмите «Поделиться» внизу Safari, затем «На экран „Домой“».</div>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div class="state">Загружаю календарь, сетки и расписание. Здесь будут турниры ATP и WTA, командные кубки с временем матчей в вашем часовом поясе.</div>
+</main>
+
+<script>
+(function(){
+  const CAT = {
+    gs:{label:"Большой шлем",pts:"2000 очков"},
+    m1000:{label:"Masters 1000",pts:"1000 очков"},
+    a500:{label:"ATP 500",pts:"500 очков"},
+    a250:{label:"ATP 250",pts:"250 очков"},
+    finals:{label:"Итоговый",pts:"до 1500 очков"},
+    nextgen:{label:"Next Gen",pts:"без очков"},
+    davis:{label:"Кубок Дэвиса",pts:"командный"},
+    laver:{label:"Laver Cup",pts:"командный"},
+    team:{label:"Командный",pts:"командный"},
+    w1000:{label:"WTA 1000",pts:"1000 очков"},
+    w500:{label:"WTA 500",pts:"500 очков"},
+    w250:{label:"WTA 250",pts:"250 очков"},
+    wfinals:{label:"Итоговый",pts:"до 1500 очков"},
+    bjk:{label:"Кубок Б. Дж. Кинг",pts:"командный"}
+  };
+  const GROUP = {gs:"gs",m1000:"1000",w1000:"1000",a500:"500",w500:"500",a250:"250",w250:"250",finals:"finals",wfinals:"finals",nextgen:"finals",davis:"team",laver:"team",team:"team",bjk:"team"};
+  const FILTERS = [["all","Все"],["gs","Большой шлем"],["1000","1000"],["500","500"],["250","250"],["finals","Итоговые"],["team","Командные"]];
+  const SURF = {hard:["Хард","--hard"],"hard-i":["Хард, зал","--hard-i"],clay:["Грунт","--clay"],grass:["Трава","--grass"],mixed:["Разные","--mixed"]};
+  const MONTHS = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+
+  const state = {seasons:{}, season:null, draws:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
+  try{ state.filter = localStorage.getItem("tablo-filter2") || "all"; state.tour = localStorage.getItem("tablo-tour") || "all"; }catch(e){}
+  function rebuild(){
+    const list = [];
+    for (const [tour,s] of Object.entries(state.seasons)) (s.tournaments||[]).forEach(t=>list.push(Object.assign({tour}, t)));
+    list.sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end)||a.tour.localeCompare(b.tour));
+    const ups = Object.values(state.seasons).map(s=>s.updatedAt).filter(Boolean).sort();
+    state.season = list.length ? {tournaments:list, updatedAt:ups[ups.length-1]} : null;
+  }
+  const inTour = t => state.tour==="all" || t.tour===state.tour;
+  function paintTours(){ document.querySelectorAll("[data-tour]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.tour===state.tour))); }
+  document.querySelector(".tours").addEventListener("click", e=>{
+    const b = e.target.closest("[data-tour]"); if(!b) return;
+    state.tour = b.dataset.tour; try{localStorage.setItem("tablo-tour",state.tour)}catch(err){}
+    paintTours(); route();
+  });
+  paintTours();
+
+  const app = document.getElementById("app");
+  const stamp = document.getElementById("stamp");
+  const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // ---------- dates ----------
+  const pad = n => String(n).padStart(2,"0");
+  const localISO = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const todayISO = () => localISO(new Date());
+  const parseDay = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+  const fmtDay = s => parseDay(s).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+  const fmtDayLong = s => parseDay(s).toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});
+  const fmtShort = s => { const d=parseDay(s); return d.getDate()+"."+pad(d.getMonth()+1); };
+  const fmtRange = (a,b) => {
+    const A=parseDay(a), B=parseDay(b);
+    if (A.getMonth()===B.getMonth()) return A.getDate()+"–"+B.getDate()+" "+B.toLocaleDateString("ru-RU",{month:"short"}).replace(".","");
+    return fmtShort(a)+"–"+fmtShort(b);
+  };
+  const fmtTime = iso => new Date(iso).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  let TZ = "";
+  try{
+    const parts = new Intl.DateTimeFormat("ru-RU",{timeZoneName:"short"}).formatToParts(new Date());
+    TZ = (parts.find(p=>p.type==="timeZoneName")||{}).value || "";
+  }catch(e){}
+  const dayOfMatch = m => m.t ? localISO(new Date(m.t)) : (m.d || null);
+
+  const tStatus = t => { const d=todayISO(); return t.end < d ? "done" : (t.start <= d ? "live" : "next"); };
+  const byId = id => (state.season && state.season.tournaments || []).find(t=>t.id===id);
+
+  // ---------- small renderers ----------
+  const tourMark = t => `<span class="tour" data-t="${esc(t.tour)}">${t.tour==="wta"?"WTA":"ATP"}</span>`;
+  const catMark = t => tourMark(t)+`<span class="cat" data-c="${esc(t.cat)}">${esc((CAT[t.cat]||{}).label||t.cat)}</span>`;
+  const surfMark = t => { const s=SURF[t.surf]||SURF.mixed; return `<span class="surf" style="--c:var(${s[1]})">${s[0]}</span>`; };
+  const statusPill = t => { const s=tStatus(t); return s==="live"?`<span class="pill live">Идет</span>`:s==="done"?`<span class="pill done">Завершен</span>`:`<span class="pill">Скоро</span>`; };
+
+  function pName(p){
+    if(!p) return `<span class="nm">—</span>`;
+    if(p.bye) return `<span class="nm">свободный проход</span>`;
+    if(p.tbd) return `<span class="nm">определится</span>`;
+    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"");
+  }
+  const plain = p => !p ? "—" : p.bye ? "свободный проход" : p.tbd ? "определится" : p.n + (p.s?` [${p.s}]`:"") + (p.tag?` (${p.tag})`:"");
+
+  function matchFoot(m){
+    if (m.st==="live") return `<span class="lv">Идет</span><span>${m.t?fmtTime(m.t):""}</span>`;
+    if (m.w && m.sc) return `<span class="sc">${esc(m.sc)}</span><span>${m.d?fmtShort(m.d):""}</span>`;
+    if (m.t) return `<span>${fmtShort(dayOfMatch(m))}, ${m.nb?"не ранее ":""}${fmtTime(m.t)}</span><span></span>`;
+    if (m.d) return `<span>${fmtShort(m.d)}, время уточняется</span><span></span>`;
+    return "";
+  }
+  function matchCard(m){
+    const side = (p,i) => {
+      const empty = !p || p.bye || p.tbd || (p.tag==="Q" && p.n==="Квалификант");
+      const cls = m.w ? (m.w===i?"win":"lose") : (empty?"empty":"");
+      return `<div class="p ${cls}">${pName(p)}</div>`;
+    };
+    const foot = matchFoot(m);
+    return `<div class="mt ${m.st==="live"?"live":""}">${side(m.a,1)}${side(m.b,2)}${foot?`<div class="foot">${foot}</div>`:""}</div>`;
+  }
+
+  // ---------- views ----------
+  function viewNow(){
+    const ts = state.season.tournaments;
+    const today = todayISO();
+    const live = ts.filter(t=>tStatus(t)==="live" && inTour(t));
+    const next = ts.filter(t=>tStatus(t)==="next" && inTour(t)).slice(0,6);
+
+    // collect dated matches from today on
+    const limit = localISO(new Date(Date.now()+12*864e5));
+    const items = [];
+    for (const [id,dr] of Object.entries(state.draws)){
+      const t = byId(id); if(!t || !inTour(t)) continue;
+      const groups = (dr.rounds||[]).concat(dr.extra||[]);
+      for (const r of groups) for (const m of (r.matches||[])){
+        const day = dayOfMatch(m); if(!day || day<today || day>limit) continue;
+        items.push({t, r, m, day});
+      }
+    }
+    items.sort((x,y)=> x.day.localeCompare(y.day) || (x.m.t||"9").localeCompare(y.m.t||"9"));
+    const byDay = {};
+    items.forEach(it=>{ (byDay[it.day]=byDay[it.day]||[]).push(it); });
+
+    const liveCards = live.length ? live.map(t=>`
+      <a class="tcard" href="#t-${esc(t.id)}">
+        <div class="row">${catMark(t)}${statusPill(t)}</div>
+        <h3>${esc(t.name)}</h3>
+        <div class="row hint">${esc(t.city)} · ${fmtRange(t.start,t.end)}</div>
+        <div class="row">${surfMark(t)}<span class="pts">${(CAT[t.cat]||{}).pts||""}</span></div>
+      </a>`).join("") : `<div class="state">Сейчас турниров нет. Ближайшие — ниже.</div>`;
+
+    const days = Object.keys(byDay).length ? Object.keys(byDay).map(day=>`
+      <div class="day">
+        <h3><b>${day===today?"Сегодня":esc(fmtDayLong(day))}</b>${day===today?" · "+esc(fmtDay(day)):""}</h3>
+        ${byDay[day].map(({t,r,m})=>schedRow(t,r,m,true)).join("")}
+      </div>`).join("") : `<div class="state">На ближайшие дни матчей с назначенным временем пока нет.</div>`;
+
+    const nextRows = next.map(seasonRow).join("");
+
+    return `
+      <section class="sec">
+        <div class="sec-head"><h2>Идут сейчас</h2></div>
+        <div class="live-grid">${liveCards}</div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h2>Матчи по дням</h2><span class="hint">Время — ваше местное${TZ?" ("+esc(TZ)+")":""}. «Не ранее» — матч начнется сразу после предыдущего на корте.</span></div>
+        <div class="days">${days}</div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h2>Дальше в сезоне</h2><a class="hint" href="#season">Весь календарь →</a></div>
+        <div>${nextRows}</div>
+      </section>`;
+  }
+
+  function schedRow(t,r,m,withT){
+    const time = m.t ? `${fmtTime(m.t)}${m.nb?"<small>не ранее</small>":""}` : `—<small>уточняется</small>`;
+    const a = m.a, b = m.b;
+    const players = `<span class="${m.w===1?"w":""}">${esc(plain(a))}</span><span class="vs">—</span><span class="${m.w===2?"w":""}">${esc(plain(b))}</span>`;
+    const res = m.st==="live" ? `<span class="pill live">Идет</span>` : (m.w && m.sc ? esc(m.sc) : "");
+    const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a> · `:"") + esc(r.name) + (m.court?` · ${esc(m.court)}`:"");
+    return `<div class="mrow"><div class="time">${time}</div><div class="who"><div class="players">${players}</div><div class="ctx">${ctx}</div></div><div class="res">${res}</div></div>`;
+  }
+
+  function seasonRow(t){
+    const st = tStatus(t);
+    let out;
+    if (t.champ) out = `<div class="lbl">${t.tour==="wta"?"Победительница":"Победитель"}</div><div><b>${esc(t.champ)}</b></div>${t.runner?`<div class="meta">в финале ${esc(t.runner)}, ${esc(t.score)}</div>`:""}`;
+    else if (t.note && st==="done") out = `<div class="lbl">Итог</div><div>${esc(t.note)}</div>`;
+    else out = `<div>${statusPill(t)}</div>${t.draw?`<div class="meta">Есть сетка и расписание</div>`:""}`;
+    return `<a class="trow" data-st="${st}" href="#t-${esc(t.id)}">
+      <div class="dates">${fmtRange(t.start,t.end)}</div>
+      <div><div class="tname">${esc(t.name)}</div><div class="meta">${esc(t.city)}, ${esc(t.country)}</div><div class="row" style="margin-top:4px">${catMark(t)}${surfMark(t)}</div></div>
+      <div class="out">${out}</div></a>`;
+  }
+
+  function viewSeason(){
+    const f = state.filter;
+    const ts = state.season.tournaments.filter(t=> inTour(t) && (f==="all" || GROUP[t.cat]===f));
+    const months = {};
+    ts.forEach(t=>{ const k=t.start.slice(0,7); (months[k]=months[k]||[]).push(t); });
+    const body = Object.keys(months).sort().map(k=>{
+      const m = Number(k.slice(5))-1;
+      return `<section class="month sec"><h3>${MONTHS[m]} ${k.slice(0,4)}</h3><div>${months[k].map(seasonRow).join("")}</div></section>`;
+    }).join("") || `<div class="state">В этой категории турниров нет.</div>`;
+    return `
+      <section class="sec">
+        <div class="sec-head"><h1>Календарь сезона</h1><span class="hint">${ts.length} событий</span></div>
+        <div class="chips" role="group" aria-label="Категория">${FILTERS.map(([k,l])=>`<button class="chip" type="button" data-filter="${k}" aria-pressed="${k===f}">${l}</button>`).join("")}</div>
+      </section>${body}`;
+  }
+
+  function viewTournament(id){
+    const t = byId(id);
+    if (!t) return `<a class="back" href="#season">← Календарь</a><div class="state">Этого турнира нет в календаре.</div>`;
+    const dr = state.draws[id];
+    const st = tStatus(t);
+    let head = `
+      <a class="back" href="#season">← Календарь</a>
+      <div class="thead">
+        <div class="row">${catMark(t)}${statusPill(t)}</div>
+        <h1>${esc(t.name)}</h1>
+        <div class="facts">
+          <div><span class="lbl">Даты</span>${esc(fmtDay(t.start))} — ${esc(fmtDay(t.end))}</div>
+          <div><span class="lbl">Место</span>${esc(t.city)}, ${esc(t.country)}</div>
+          <div><span class="lbl">Покрытие</span>${surfMark(t)}</div>
+          <div><span class="lbl">Очки победителю</span>${esc((CAT[t.cat]||{}).pts||"—")}</div>
+        </div>
+      </div>`;
+    if (t.champ) head += `<div class="champ"><span class="lbl">${t.tour==="wta"?"Победительница":"Победитель"}</span><b>${esc(t.champ)}</b>${t.runner?`<span>в финале — ${esc(t.runner)}, ${esc(t.score)}</span>`:""}</div>`;
+    if (t.note) head += `<div class="note">${esc(t.note)}</div>`;
+
+    if (!dr){
+      const msg = st==="done" ? "Подробной сетки этого турнира в базе нет — только итог." : "Сетка и расписание появятся здесь после жеребьевки.";
+      return head + `<div class="state">${msg}</div>`;
+    }
+
+    const tab = state.tab[id] || (dr.type==="list" ? "list" : "bracket");
+    let tabs = "", body = "";
+    if (dr.type==="list"){
+      body = `<div class="listr">${dr.rounds.map(r=>`
+        <div class="lr"><h3>${esc(r.name)}</h3>${r.matches.map(m=>`
+          <div class="lrow"><div><div class="players"><span class="${m.w===1?"w":""}" style="${m.w===1?"font-weight:600":""}">${esc(plain(m.a))}</span> <span class="hint">—</span> <span style="${m.w===2?"font-weight:600":""}">${esc(plain(m.b))}</span></div><div class="hint">${esc(m.sc||"")}</div></div><span class="pt">+${esc(m.pts)} ${m.pts==1?"очко":"очка"}</span><span class="run">${esc(m.run||"")}</span></div>`).join("")}</div>`).join("")}</div>`;
+    } else {
+      tabs = `<div class="tabs" role="tablist">
+        <button role="tab" type="button" data-tab="bracket" aria-selected="${tab==="bracket"}">Сетка</button>
+        <button role="tab" type="button" data-tab="days" aria-selected="${tab==="days"}">Матчи по дням</button></div>`;
+      if (tab==="bracket"){
+        body = bracketView(id, dr);
+      } else {
+        const groups = (dr.extra||[]).concat(dr.rounds||[]);
+        const byDay = {};
+        groups.forEach(r=>(r.matches||[]).forEach(m=>{ const d=dayOfMatch(m); if(d)(byDay[d]=byDay[d]||[]).push({r,m}); }));
+        const keys = Object.keys(byDay).sort();
+        body = keys.length ? `<div class="days">${keys.map(d=>`<div class="day"><h3><b>${esc(fmtDayLong(d))}</b></h3>${
+          byDay[d].sort((x,y)=>(x.m.t||"9").localeCompare(y.m.t||"9")).map(({r,m})=>schedRow(t,r,m,false)).join("")}</div>`).join("")}</div>`
+          : `<div class="state">Расписание еще не опубликовано.</div>`;
+        body += `<p class="hint">Время — ваше местное${TZ?" ("+esc(TZ)+")":""}.</p>`;
+      }
+    }
+    return head + `<section class="sec">${tabs}${body}</section>`;
+  }
+
+  // ---------- bracket: collapsing & sections ----------
+  const isPlayed = m => !!m.w || !!(m.a && m.a.bye) || !!(m.b && m.b.bye);
+  const roundDone = r => (r.matches||[]).length>0 && r.matches.every(isPlayed);
+  function autoCollapsed(dr){
+    const n = dr.rounds.length; let last = -1;
+    for (let i=0;i<n;i++){ if (roundDone(dr.rounds[i])) last = i; else break; }
+    const keep = Math.min(last, n-2);       // the latest finished round stays open for context
+    const set = {}; for (let i=0;i<keep;i++) set[i] = true;
+    return {set, current: Math.min(last+1, n-1)};
+  }
+  function sectionSlice(matches, sec, parts){
+    if (!sec) return matches;
+    const m = matches.length, i = sec-1;
+    if (m >= parts) return matches.slice(Math.round(i*m/parts), Math.round((i+1)*m/parts));
+    return [matches[Math.floor(i*m/parts)]];
+  }
+  function sectionLabel(first, sec, parts){
+    const seeds = sectionSlice(first, sec, parts).flatMap(m=>[m.a,m.b]).filter(p=>p && p.s).sort((x,y)=>x.s-y.s);
+    return seeds.length ? seeds[0].n.split(" ").slice(-1)[0] : "";
+  }
+  function bracketView(id, dr){
+    const auto = autoCollapsed(dr);
+    const manual = state.collapse[id] || {};
+    const isC = i => (i in manual) ? manual[i] : !!auto.set[i];
+    const first = dr.rounds[0].matches || [];
+    const parts = first.length >= 16 ? 4 : first.length >= 8 ? 2 : 0;
+    const sec = parts ? (state.section[id] || 0) : 0;
+    const anyC = dr.rounds.some((r,i)=>isC(i));
+    const autoN = Object.keys(auto.set).length;
+    let tools = "";
+    if (parts){
+      const name = parts===4 ? ["Верхняя четверть","Вторая четверть","Третья четверть","Нижняя четверть"] : ["Верхняя половина","Нижняя половина"];
+      tools += `<div class="chips" role="group" aria-label="Часть сетки"><button class="chip" type="button" data-sec="0" aria-pressed="${sec===0}">Вся сетка</button>${
+        name.map((nm,k)=>{ const lb=sectionLabel(first,k+1,parts); return `<button class="chip" type="button" data-sec="${k+1}" aria-pressed="${sec===k+1}" title="${esc(nm)}">${parts===4?(k+1)+"/4":(k?"Низ":"Верх")}${lb?" · "+esc(lb):""}</button>`; }).join("")}</div>`;
+    }
+    tools += anyC ? `<button class="linkbtn" type="button" data-brk="open">Развернуть все круги</button>`
+                  : (autoN ? `<button class="linkbtn" type="button" data-brk="auto">Свернуть сыгранные круги</button>` : "");
+    const cols = dr.rounds.map((r,i)=>{
+      const ms = sectionSlice(r.matches||[], sec, parts);
+      if (isC(i)){
+        const played = ms.filter(m=>m.w).length;
+        return `<button class="bcol-c" type="button" data-col="${i}" aria-expanded="false" title="Развернуть ${esc(r.name)}"><span class="plus">+</span><span class="v"><b>${esc(r.name)}</b><small>${played ? played+" сыграно" : ms.length+" матчей"}</small></span></button>`;
+      }
+      const now = i===auto.current && !roundDone(r) ? 1 : 0;
+      return `<div class="bcol"><button class="colhead" type="button" data-col="${i}" aria-expanded="true" data-now="${now}"><b>${esc(r.name)}${now?" · сейчас":""}</b><span>свернуть −</span></button><div class="stack">${ms.map(matchCard).join("")}</div></div>`;
+    }).join("");
+    const hint = autoN && !(Object.keys(manual).length) ? `<p class="hint">Сыгранные круги свернуты, чтобы были видны те, кто еще в турнире. Нажмите на свернутый круг, чтобы открыть его.</p>` : "";
+    return `${tools?`<div class="btools">${tools}</div>`:""}${hint}<div class="bracket-frame"><div class="bracket">${cols}</div></div>${dr.note?"":""}`;
+  }
+
+  // ---------- routing ----------
+  function route(){
+    const h = (location.hash||"").replace(/^#/,"");
+    document.querySelectorAll("[data-nav]").forEach(a=>{
+      const on = (h==="season" || h.startsWith("t-")) ? a.dataset.nav==="season" : a.dataset.nav==="now";
+      if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+    });
+    if (state.err){ app.innerHTML = `<div class="state">${esc(state.err)}</div>`; return; }
+    if (!state.season){ return; }
+    let html;
+    if (h.startsWith("t-")) html = viewTournament(h.slice(2));
+    else if (h==="season") html = viewSeason();
+    else html = viewNow();
+    app.innerHTML = html + `<footer>Источники: ATP Tour, WTA, ITF, официальные сайты турниров. Счет указан с точки зрения победителя.</footer>`;
+  }
+  window.addEventListener("hashchange", ()=>{ route(); window.scrollTo(0,0); });
+  function keepScroll(){ const y = window.scrollY; route(); window.scrollTo(0,y); }
+
+  app.addEventListener("click", e=>{
+    const f = e.target.closest("[data-filter]");
+    if (f){ state.filter=f.dataset.filter; try{localStorage.setItem("tablo-filter2",state.filter)}catch(err){} route(); return; }
+    const tb = e.target.closest("[data-tab]");
+    if (tb){ const id=(location.hash||"").slice(3); state.tab[id]=tb.dataset.tab; route(); return; }
+    const id = (location.hash||"").slice(3);
+    const col = e.target.closest("[data-col]");
+    if (col){
+      const i = Number(col.dataset.col), dr = state.draws[id]; if(!dr) return;
+      const c = state.collapse[id] = state.collapse[id] || {};
+      const auto = autoCollapsed(dr).set;
+      const cur = (i in c) ? c[i] : !!auto[i];
+      c[i] = !cur; keepScroll(); return;
+    }
+    const brk = e.target.closest("[data-brk]");
+    if (brk){
+      const dr = state.draws[id]; if(!dr) return;
+      if (brk.dataset.brk==="open"){ const c={}; dr.rounds.forEach((r,i)=>c[i]=false); state.collapse[id]=c; }
+      else delete state.collapse[id];
+      keepScroll(); return;
+    }
+    const sc = e.target.closest("[data-sec]");
+    if (sc){ state.section[id] = Number(sc.dataset.sec); keepScroll(); }
+  });
+
+  function setStamp(meta){
+    if (!state.season) return;
+    const u = state.season.updatedAt ? new Date(state.season.updatedAt) : null;
+    stamp.textContent = (u ? "Данные обновлены " + u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Данные загружены") + (meta && meta.stale ? " · связь с базой пока не подтверждена" : "") + (TZ ? " · время " + TZ : "");
+  }
+
+  // ---------- data ----------
+  route();
+  let lastLoad = 0;
+  async function load(){
+    lastLoad = Date.now();
+    try{
+      const r = await fetch("data/tablo.json?ts=" + Date.now(), {cache:"no-store"});
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      state.seasons = j.seasons || {}; state.draws = j.draws || {};
+      state.err = null; rebuild(); setStamp();
+      const y = window.scrollY; route(); window.scrollTo(0, y);
+    }catch(e){
+      if (!state.season){ state.err = "Не получилось загрузить данные. Проверьте интернет и откройте приложение еще раз."; route(); stamp.textContent = "Нет связи"; }
+      else stamp.textContent += " · нет связи, показаны сохраненные данные";
+    }
+  }
+  load();
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState==="visible" && Date.now()-lastLoad > 5*60*1000) load(); });
+  setInterval(()=>{ if (document.visibilityState==="visible") load(); }, 15*60*1000);
+
+  // ---------- install ----------
+  const installBtn = document.getElementById("install");
+  const iosTip = document.getElementById("ios-tip");
+  let deferred = null;
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); deferred = e; if(!standalone) installBtn.hidden = false; });
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  if (isIOS && !standalone) installBtn.hidden = false;
+  installBtn.addEventListener("click", async ()=>{
+    if (deferred){ deferred.prompt(); await deferred.userChoice.catch(()=>{}); deferred = null; installBtn.hidden = true; }
+    else iosTip.hidden = !iosTip.hidden;
+  });
+  window.addEventListener("appinstalled", ()=>{ installBtn.hidden = true; });
+  if ("serviceWorker" in navigator) window.addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+})();
+</script>
+</body>
+</html>

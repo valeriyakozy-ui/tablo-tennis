@@ -1,0 +1,29 @@
+{
+  "name": "Табло ATP и WTA",
+  "short_name": "Табло",
+  "lang": "ru",
+  "start_url": "./#now",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#13283f",
+  "theme_color": "#13283f",
+  "description": "Календарь ATP и WTA, сетки и расписание матчей",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
