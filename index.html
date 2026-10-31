@@ -90,14 +90,19 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pd{display:flex;flex-direction:column;gap:8px}
 .pd h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:baseline}
 .pd h4 b{font-size:20px;color:var(--ink)}
-.pd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.pd-list li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
-.pd-list a{font-weight:600;text-decoration:none}
-.pd-list a:hover{color:var(--accent)}
-.pd-date{font-family:var(--f-display);font-weight:600;min-width:5.5em;color:var(--muted)}
-.pd-final{font-size:13px;color:var(--muted);flex-basis:100%;padding-left:calc(5.5em + 10px)}
-.pd-now a{font-weight:600}
-@media (max-width:520px){.pd-final{padding-left:0}}
+.pd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pd-list li{display:grid;grid-template-columns:6.6em minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.pd-list li:last-child{border-bottom:0}
+.pd-name{font-weight:600;text-decoration:none;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.pd-name:hover{color:var(--accent)}
+.pd-date{font-family:var(--f-display);font-weight:600;color:var(--muted)}
+.pd-res{font-size:12px;font-weight:600;color:var(--muted)}
+.pd-list li.r-W .pd-res{color:var(--done)}
+.pd-list li.r-P .pd-res{color:var(--live)}
+.pd-list .cat{font-size:11px;padding:1px 6px}
+.pd-sum{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted)}
+.pd-sum b{font-family:var(--f-display);font-size:20px;color:var(--ink);margin-right:2px}
+@media (max-width:520px){.pd-list li{grid-template-columns:6.2em minmax(0,1fr) auto;gap:8px}.pd-list li .cat{display:none}.pd-date{font-size:13px}}
 .playing{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--live);color:var(--bg);text-decoration:none;white-space:nowrap}
 .rank-search{display:flex;flex-direction:column;gap:4px}
 .rank-search input{font:inherit;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);min-width:0;width:240px;max-width:100%}
@@ -541,20 +546,46 @@ footer{color:var(--muted);font-size:12px}
       </section>
       <div class="rank-grid ${tours.length>1?"two":""}">${cols}</div>`;
   }
+  const ROUND_LABEL = {"1/64":"1/64 финала","1/32":"1/32 финала","1/16":"1/16 финала","1/8":"1/8 финала","1/4":"1/4 финала","1/2":"1/2 финала","Финал":"Финал"};
+  // How far a player went in one tournament: from its draw when the app has one, otherwise from the calendar
+  function resultIn(t, k){
+    const dr = state.draws[t.id];
+    if (dr && dr.type==="knockout"){
+      let last = null;
+      dr.rounds.forEach((r,ri)=>(r.matches||[]).forEach(m=>{
+        const side = m.a && m.a.n && rkey(m.a.n)===k ? 1 : (m.b && m.b.n && rkey(m.b.n)===k ? 2 : 0);
+        if (!side) return;
+        const opp = side===1 ? m.b : m.a;
+        if (opp && opp.bye) return;
+        last = {ri, r, m, side};
+      }));
+      if (last){
+        const final = last.ri===dr.rounds.length-1;
+        if (last.m.w===last.side && final) return {code:"W", label:"Титул", rank:7};
+        if (last.m.w && last.m.w!==last.side) return {code:"L", label:ROUND_LABEL[last.r.name]||last.r.name, rank:final?6:(dr.rounds.length-1-last.ri<=1?5:dr.rounds.length-1-last.ri<=2?4:2)};
+        return {code:"P", label:`играет, ${ROUND_LABEL[last.r.name]||last.r.name}`, rank:1};
+      }
+    }
+    if (t.champ && rkey(t.champ)===k) return {code:"W", label:"Титул", rank:7};
+    if (t.runner && rkey(t.runner)===k) return {code:"F", label:"Финал", rank:6};
+    if ((t.sf||[]).some(n=>rkey(n)===k)) return {code:"SF", label:"1/2 финала", rank:5};
+    if ((t.qf||[]).some(n=>rkey(n)===k)) return {code:"QF", label:"1/4 финала", rank:4};
+    return null;
+  }
   function playerCard(name, tour){
     const k = rkey(name);
-    const ts = (state.season ? state.season.tournaments : []).filter(t=>t.tour===tour);
-    const won = ts.filter(t=>t.champ && rkey(t.champ)===k);
-    const lost = ts.filter(t=>t.runner && rkey(t.runner)===k);
-    const playing = playingNow()[k];
-    const line = (t, finalTxt) => `<li><span class="pd-date">${fmtRange(t.start,t.end)}</span><a href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="cat" data-c="${esc(t.cat)}">${esc(catLabel(t))}</span>${finalTxt?`<span class="pd-final">${finalTxt}</span>`:""}</li>`;
-    const wonHtml = won.length ? `<ul class="pd-list">${won.map(t=>line(t, t.runner?`в финале ${esc(t.runner)}, ${esc(t.score||"")}`:"")).join("")}</ul>`
-      : `<p class="hint">В сезоне 2026 титулов на турнирах тура пока нет.</p>`;
-    const lostHtml = lost.length ? `<h4>Финалы без победы</h4><ul class="pd-list">${lost.map(t=>line(t, `${tour==="wta"?"проиграла":"проиграл"} ${esc(t.champ)}, ${esc(t.score||"")}`)).join("")}</ul>` : "";
+    const ts = (state.season ? state.season.tournaments : []).filter(t=>t.tour===tour && !["davis","laver","team","bjk"].includes(t.cat));
+    const rows = ts.map(t=>({t, res:resultIn(t,k)})).filter(x=>x.res);
+    const n = c => rows.filter(x=>x.res.code===c || (c==="F" && x.res.code==="L" && x.res.label==="Финал")).length;
+    const titles = n("W"), finals = n("F"), semis = rows.filter(x=>x.res.label==="1/2 финала").length;
+    const short = t => t.cat==="gs" ? "Большой шлем" : catLabel(t);
+    const tip = (t,res) => res.code==="W" && t.runner ? `В финале ${t.runner}, ${t.score||""}` : res.code==="F" && t.champ ? `${tour==="wta"?"Проиграла":"Проиграл"} ${t.champ}, ${t.score||""}` : "";
+    const list = rows.length ? `<ul class="pd-list">${rows.map(({t,res})=>`<li class="r-${res.code}" title="${esc(tip(t,res))}"><span class="pd-date">${fmtRange(t.start,t.end)}</span><a class="pd-name" href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="pd-res">${esc(res.label)}</span><span class="cat" data-c="${esc(t.cat)}">${esc(short(t))}</span></li>`).join("")}</ul>`
+      : `<p class="hint">В сезоне 2026 результатов от 1/4 финала на турнирах тура пока нет.</p>`;
     return `<div class="pd">
-      <h4>Титулы в 2026 году <b>${won.length}</b></h4>${wonHtml}${lostHtml}
-      ${playing?`<p class="pd-now">Сейчас играет: <a href="#t-${esc(playing.id)}">${esc(playing.name)}</a></p>`:""}
-      <p class="hint">Учтены турниры основного тура: Большой шлем, 1000, 500, 250 и итоговые.</p></div>`;
+      <div class="pd-sum"><span><b>${titles}</b> ${titles===1?"титул":titles>=2&&titles<=4?"титула":"титулов"}</span><span><b>${finals}</b> ${finals===1?"финал":finals>=2&&finals<=4?"финала":"финалов"} без победы</span><span><b>${semis}</b> в 1/2 финала</span></div>
+      ${list}
+      <p class="hint">Турниры основного тура сезона 2026. Для турниров с сеткой в приложении видны все круги, для остальных результаты начиная с 1/4 финала.</p></div>`;
   }
   app.addEventListener("click", e=>{
     const b = e.target.closest(".pname"); if (!b) return;
