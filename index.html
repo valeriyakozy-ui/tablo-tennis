@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
 <meta name="description" content="ATP and WTA calendar, tournament draws, order of play in your time zone and live rankings">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#1f3fd0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -287,6 +287,41 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 
 footer{color:var(--muted);font-size:12px}
 @media (prefers-reduced-motion:no-preference){.tcard,.trow,.chip{transition:border-color .15s,background-color .15s,color .15s}}
+
+/* Reference look, light edition: the bright broadcast header from the references (ATP electric blue + lime, WTA violet + teal, All = blue-to-violet), light tinted content below with dark text. */
+:root{
+  --bg:#f4f3fd; --sunk:#ecebfa; --ink:#16163f; --muted:#55577f; --line:#dcdbf2;
+  --accent:#4a32d6; --accent-soft:#e7e3fc; --accent-deep:#3420a8;
+  --hd:linear-gradient(100deg,#1f3fd0 0%,#3a2fc0 50%,#6a35e0 100%); --hd-ink:#ffffff; --hd-muted:#dcdcff; --hd-on:#ffffff; --hd-on-ink:#2c2a9c;
+  --done:#0fa37f; --done-ink:#0a7d61; --done-soft:#d7f3ea;
+  --atp:#2a30d0; --wta:#6a35e0}
+:root[data-tt="atp"]{
+  --bg:#edf2ff; --sunk:#e1e9ff; --ink:#0b1a4a; --muted:#46557f; --line:#cdd8f3;
+  --accent:#1a3fc4; --accent-soft:#dde6ff; --accent-deep:#0f2470;
+  --hd:linear-gradient(100deg,#1f3fd0 0%,#152c9c 50%,#0c1a5e 100%); --hd-muted:#c9d6ff; --hd-on:#9fc3ff; --hd-on-ink:#0c1a5e;
+  --done:#2a6ae0; --done-ink:#1747a6; --done-soft:#dde6ff; --hi:#dde6ff; --hi-ink:#0f2470}
+:root[data-tt="wta"]{
+  --bg:#f5f1ff; --sunk:#ece5fd; --ink:#1d1238; --muted:#5c4f80; --line:#ddd3f3;
+  --accent:#6a35e0; --accent-soft:#e9e0fd; --accent-deep:#4c20b0;
+  --hd:linear-gradient(100deg,#6a35e0 0%,#4f24b8 45%,#2b5f8f 75%,#0f8a6c 100%); --hd-muted:#e2d6ff; --hd-on:#2fd3a3; --hd-on-ink:#0d2a24;
+  --done:#0f9a76; --done-ink:#0a7a5d; --done-soft:#d5f2e8; --hi:#d5f2e8; --hi-ink:#0a5a46}
+:root[data-tt="wta"] .chip[aria-pressed="true"]{background:#d5f2e8;color:#0a5a46;border-color:#9fdcc6}
+:root[data-tt="wta"] .day h3{border-bottom-color:#0f9a76}
+:root[data-tt="atp"] .day h3{border-bottom-color:#1a3fc4}
+body::before{background:var(--hd)}
+.board{background:var(--hd);color:var(--hd-ink);box-shadow:none}
+.board::after{display:none}
+.brand,.brand .t-atp,.brand .t-wta,:root[data-tt] .brand{color:var(--hd-ink)}
+.brand small,.stamp{color:var(--hd-muted)}
+.nav a{color:var(--hd-muted)}
+.nav a[aria-current="page"]{background:#fff;color:var(--accent-deep)}
+@media (hover:hover){.nav a:not([aria-current="page"]):hover{color:#fff}}
+.tours{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+.tours button{color:var(--hd-muted)}
+.tours button[aria-pressed="true"],.tours button[data-tour="all"][aria-pressed="true"],.tours button[data-tour="atp"][aria-pressed="true"],.tours button[data-tour="wta"][aria-pressed="true"]{background:var(--hd-on);color:var(--hd-on-ink)}
+.install{border-color:rgba(255,255,255,.45)!important;color:#fff!important}
+h2{color:var(--ink)}
+.card,.now-card{border-color:var(--line)}
 </style>
 </head>
 <body>
@@ -812,7 +847,7 @@ footer{color:var(--muted);font-size:12px}
     if (h.startsWith("t-") && state.season){ const t = byId(h.slice(2)); if (t) tt = t.tour; }
     if (tt) document.documentElement.setAttribute("data-tt", tt); else document.documentElement.removeAttribute("data-tt");
     const tc = document.querySelector('meta[name="theme-color"]');
-    if (tc) tc.setAttribute("content", "#ffffff");
+    if (tc) tc.setAttribute("content", tt==="atp" ? "#1f3fd0" : tt==="wta" ? "#6a35e0" : "#1f3fd0");
     if (!state.season){ return; }
     let html;
     if (h.startsWith("t-")) html = viewTournament(h.slice(2));
