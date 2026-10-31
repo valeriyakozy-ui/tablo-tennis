@@ -324,6 +324,13 @@ body::before{background:var(--hd)}
 h2{color:var(--ink)}
 .card,.now-card{border-color:var(--line)}
 
+
+/* on-demand update */
+.upd-row{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:-2px}
+.upd{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.upd:hover{background:rgba(255,255,255,.24)}
+.upd[disabled]{opacity:.6;cursor:default}
+.upd-msg{font-size:12px;color:var(--hd-muted,var(--board-muted))}
 </style>
 </head>
 <body>
@@ -343,6 +350,7 @@ h2{color:var(--ink)}
     <button class="install" id="install" type="button" hidden>Install app</button>
     <div class="stamp" id="stamp">Loading data…</div>
     <div class="ios-tip" id="ios-tip" hidden>On iPhone and iPad: tap Share at the bottom of Safari, then Add to Home Screen.</div>
+    <div class="upd-row"><button class="upd" id="upd" type="button">Update now</button><span class="upd-msg" id="upd-msg" aria-live="polite"></span></div>
   </div>
 </header>
 
@@ -935,6 +943,67 @@ h2{color:var(--ink)}
     if (TZ) parts.push("Times in " + TZ);
     stamp.innerHTML = parts.map(x=>`<span>${esc(x)}</span>`).join("");
   }
+
+  // ---------- update on demand ----------
+  // Inside Claude the page starts the scheduled update itself (Claude Code Remote connector).
+  // Anywhere else (the installed app) the button reloads the latest data and opens the Claude page.
+  const TASK_ID = "trig_01XgS1KjcZPUR1dd35tXsEhf", TASK_SERVER = "Claude Code Remote";
+  const CLAUDE_PAGE = "https://claude.ai/artifact/SybWVREDtRP11NWPsbakRn";
+  (function(){
+    const btn = document.getElementById("upd"), msg = document.getElementById("upd-msg");
+    if (!btn) return;
+    let mcp = null, busy = false;
+    const say = t => { msg.textContent = t || ""; };
+    const hm = d => d.toLocaleTimeString(LOC,{hour:"2-digit",minute:"2-digit"});
+    const dayHm = d => { const today = new Date().toDateString()===d.toDateString(); return (today ? "today " : d.toLocaleDateString(LOC,{day:"numeric",month:"short"})+" ") + hm(d); };
+    function showLastRun(payload){
+      const list = payload && (payload.data || payload.triggers || (Array.isArray(payload) ? payload : null));
+      const t = Array.isArray(list) ? list.find(x=>x && x.id===TASK_ID) : null;
+      const lr = t && t.last_run; if (!lr || busy) return;
+      const at = lr.finished_at || lr.fired_at; if (!at) return;
+      const st = String(lr.status||"").toUpperCase();
+      const running = !lr.finished_at && st!=="FAILED";
+      say(running ? `Update running since ${dayHm(new Date(lr.fired_at))}` : st==="FAILED" ? `Last update failed (${dayHm(new Date(at))})` : `Last update run: ${dayHm(new Date(at))}`);
+    }
+    if (window.claude && window.claude.use){
+      window.claude.use("mcp").then(m=>{
+        mcp = m;
+        if (!m) return;
+        try{
+          m.watchTool(TASK_SERVER, "list_triggers", {limit:20}, ev=>{ if (ev.type==="data") showLastRun(ev.result && ev.result.payload); }, {refetchInterval:120000});
+        }catch(e){}
+      }).catch(()=>{});
+    }
+    btn.addEventListener("click", async ()=>{
+      if (busy) return;
+      if (!mcp){
+        // installed app or a browser: fetch the newest data, then open the Claude page that can start an update
+        say("Checking for new data…");
+        try{ if (typeof load==="function") await load(); }catch(e){}
+        say("To start a fresh update, tap “Update now” on the Claude page that just opened.");
+        window.open(CLAUDE_PAGE, "_blank", "noopener");
+        return;
+      }
+      busy = true; btn.disabled = true; say("Starting the update…");
+      try{
+        await mcp.callTool(TASK_SERVER, "fire_trigger", {trigger_id: TASK_ID});
+        say(`Update started at ${hm(new Date())}. New data appears here by itself in about 10–20 minutes.`);
+        setTimeout(()=>{ busy = false; btn.disabled = false; }, 60000);
+        return;
+      }catch(e){
+        const c = e && e.code;
+        if (c==="approval_required" || c==="consent_required") say("The update needs your approval. Tap “Update now” again and allow it.");
+        else if (c==="not_in_manifest") say("Starting updates is turned off for this page. Turn it on in the page’s Permissions menu.");
+        else if (c==="needs_reauth") say("Reconnect Claude Code Remote in claude.ai Settings, Connectors, then try again.");
+        else if (c==="server_not_connected" || c==="selection_required") say("The Claude Code Remote connector is not available here. Open the Claude app and try again.");
+        else if (c==="blocked_by_policy") say("Your organisation does not allow this page to start updates.");
+        else if (c==="tool_error") say("The scheduled task refused to start: " + String(e.message||"").slice(0,140));
+        else if (c==="server_unavailable" || c==="upstream_error" || c==="cancelled") say("Could not confirm the start. Wait a few minutes before tapping again: it may already be running.");
+        else say("This view cannot start updates. Open the page in the Claude app.");
+      }
+      busy = false; btn.disabled = false;
+    });
+  })();
 
   // ---------- data ----------
   route();
