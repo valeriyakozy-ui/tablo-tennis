@@ -1,7 +1,7 @@
 """Собирает data/tablo.json из документов, выгруженных из базы страницы Claude.
 
 Запуск: python3 tools/build_bundle.py <папка_выгрузки>
-В папке ожидаются season/2026.json, season/2026-wta.json и draws/*.json
+В папке ожидаются season/2026.json, season/2026-wta.json, draws/*.json и rankings/*.json
 (так их сохраняет ArtifactData с out_dir).
 """
 import json, os, sys
@@ -19,7 +19,13 @@ for f in sorted(os.listdir(ddir)):
         draws[f[:-5]] = json.load(open(os.path.join(ddir, f)))
 for tour, s in seasons.items():
     assert len(s.get("tournaments", [])) > 40, f"в календаре {tour} подозрительно мало турниров"
+rankings = {}
+rdir = os.path.join(src, "rankings")
+if os.path.isdir(rdir):
+    for f in sorted(os.listdir(rdir)):
+        if f.endswith(".json"):
+            rankings[f[:-5]] = json.load(open(os.path.join(rdir, f)))
 updated = max(s.get("updatedAt", "") for s in seasons.values())
 out = os.path.join(root, "data", "tablo.json")
-json.dump({"updatedAt": updated, "seasons": seasons, "draws": draws}, open(out, "w"), ensure_ascii=False, separators=(",", ":"))
+json.dump({"updatedAt": updated, "seasons": seasons, "draws": draws, "rankings": rankings}, open(out, "w"), ensure_ascii=False, separators=(",", ":"))
 print("ok:", out, "| сеток:", len(draws), "| обновлено:", updated)

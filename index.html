@@ -63,6 +63,24 @@ button{font:inherit;color:inherit}
 .nav a:hover{color:var(--board-ink)}
 .stamp{font-size:12px;color:var(--board-muted);width:100%;display:flex;flex-wrap:wrap;gap:2px 16px}
 .chip-sub{margin-left:8px;font-weight:600}
+.rk{font-size:11px;color:var(--muted);margin-left:6px;font-weight:500;white-space:nowrap}
+.mt .p .rk{margin-left:auto;flex:none}
+.rank-grid{display:grid;gap:28px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.rank-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rank-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rank-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.rank-head h2{display:flex;gap:10px;align-items:baseline}
+.rank-head h2 .tour{font-size:22px}
+table.rank{width:100%;border-collapse:collapse;font-size:14px}
+table.rank th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:0 6px 6px;border-bottom:2px solid var(--ink)}
+table.rank th:last-child,table.rank td.pt{text-align:right}
+table.rank td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:baseline}
+table.rank td.pos{font-family:var(--f-display);font-weight:600;font-size:17px;width:3.2em}
+table.rank td.pt{color:var(--muted);white-space:nowrap}
+table.rank tr:nth-child(-n+10) .rn{font-weight:600}
+.playing{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--live);color:var(--bg);text-decoration:none;white-space:nowrap}
+.rank-search{display:flex;flex-direction:column;gap:4px}
+.rank-search input{font:inherit;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);min-width:0;width:240px;max-width:100%}
 .nowtag{font-style:normal;font-family:var(--f-body);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:none;margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink);vertical-align:2px}
 .row.hint{gap:4px 14px}
 .tours{display:flex;border:1px solid color-mix(in srgb,var(--board-muted) 45%,transparent);border-radius:999px;padding:2px}
@@ -204,6 +222,7 @@ footer{color:var(--muted);font-size:12px}
     <nav class="nav" aria-label="Разделы">
       <a href="#now" data-nav="now">Сейчас</a>
       <a href="#season" data-nav="season">Календарь</a>
+      <a href="#rank" data-nav="rank">Рейтинг</a>
     </nav>
     <button class="install" id="install" type="button" hidden>Установить приложение</button>
     <div class="stamp" id="stamp">Загружаю данные…</div>
@@ -238,7 +257,11 @@ footer{color:var(--muted);font-size:12px}
   const SURF = {hard:["Хард","--hard"],"hard-i":["Хард, зал","--hard-i"],clay:["Грунт","--clay"],grass:["Трава","--grass"],mixed:["Разные","--mixed"]};
   const MONTHS = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
 
-  const state = {seasons:{}, season:null, draws:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
+  const state = {seasons:{}, season:null, draws:{}, rankings:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
+  const rkey = n => String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[\s-]+/).filter(Boolean).sort().join(" ");
+  let RANK = {};
+  function buildRank(){ RANK = {}; for (const [tour,rk] of Object.entries(state.rankings)) (rk.list||[]).forEach(x=>{ RANK[rkey(x.n)] = {r:x.r, p:x.p, tour}; }); }
+  const rankOf = p => (p && p.n && !p.team) ? RANK[rkey(p.n)] : null;
   try{ state.filter = localStorage.getItem("tablo-filter2") || "all"; state.tour = localStorage.getItem("tablo-tour") || "all"; }catch(e){}
   function rebuild(){
     const list = [];
@@ -294,7 +317,8 @@ footer{color:var(--muted);font-size:12px}
     if(!p) return `<span class="nm">—</span>`;
     if(p.bye) return `<span class="nm">свободный проход</span>`;
     if(p.tbd) return `<span class="nm">определится</span>`;
-    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"");
+    const rk = rankOf(p);
+    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"")+(rk?`<span class="rk" title="Место в рейтинге">№${rk.r}</span>`:"");
   }
   const plain = p => !p ? "—" : p.bye ? "свободный проход" : p.tbd ? "определится" : p.n + (p.s?` [${p.s}]`:"") + (p.tag?` (${p.tag})`:"");
 
@@ -371,7 +395,8 @@ footer{color:var(--muted);font-size:12px}
   function schedRow(t,r,m,withT){
     const time = m.t ? `${fmtTime(m.t)}${m.nb?"<small>не ранее</small>":""}` : `—<small>уточняется</small>`;
     const a = m.a, b = m.b;
-    const players = `<span class="${m.w===1?"w":""}">${esc(plain(a))}</span><span class="vs">—</span><span class="${m.w===2?"w":""}">${esc(plain(b))}</span>`;
+    const rkTag = p => { const rk = rankOf(p); return rk ? `<small class="rk" title="Место в рейтинге">№${rk.r}</small>` : ""; };
+    const players = `<span class="${m.w===1?"w":""}">${esc(plain(a))}${rkTag(a)}</span><span class="vs">—</span><span class="${m.w===2?"w":""}">${esc(plain(b))}${rkTag(b)}</span>`;
     const res = m.st==="live" ? `<span class="pill live">Идет</span>` : (m.w && m.sc ? esc(m.sc) : "");
     const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a>, `:"") + esc(r.name) + (m.court?`, ${esc(m.court)}`:"");
     return `<div class="mrow"><div class="time">${time}</div><div class="who"><div class="players">${players}</div><div class="ctx">${ctx}</div></div><div class="res">${res}</div></div>`;
@@ -456,6 +481,42 @@ footer{color:var(--muted);font-size:12px}
     return head + `<section class="sec">${tabs}${body}</section>`;
   }
 
+  // ---------- rankings ----------
+  function playingNow(){
+    const map = {};
+    for (const [id,dr] of Object.entries(state.draws)){
+      const t = byId(id); if (!t || tStatus(t)!=="live") continue;
+      for (const r of (dr.rounds||[])) for (const m of (r.matches||[])){
+        if (m.w || (m.a&&m.a.bye) || (m.b&&m.b.bye)) continue;
+        [m.a,m.b].forEach(p=>{ if (p && p.n && !p.tbd && !p.team) map[rkey(p.n)] = t; });
+      }
+    }
+    return map;
+  }
+  function viewRank(){
+    const tours = state.tour==="all" ? ["atp","wta"] : [state.tour];
+    const playing = playingNow();
+    const cols = tours.map(tour=>{
+      const rk = state.rankings[tour];
+      if (!rk) return `<div class="state">Рейтинг ${tour.toUpperCase()} еще не загружен.</div>`;
+      return `<section class="rank-col">
+        <div class="rank-head"><h2><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span> одиночный разряд</h2><span class="hint">по данным на ${esc(fmtDay(rk.date))}</span></div>
+        <table class="rank"><thead><tr><th>Место</th><th>${tour==="wta"?"Теннисистка":"Теннисист"}</th><th>Очки</th></tr></thead><tbody>${
+          rk.list.map(x=>{ const t = playing[rkey(x.n)]; return `<tr data-q="${esc(rkey(x.n))}"><td class="pos">${x.r}</td><td><span class="rn">${esc(x.n)}</span>${t?`<a class="playing" href="#t-${esc(t.id)}">играет: ${esc(t.city.split(" (")[0])}</a>`:""}</td><td class="pt">${x.p.toLocaleString("ru-RU")}</td></tr>`; }).join("")
+        }</tbody></table></section>`;
+    }).join("");
+    return `<section class="sec">
+        <div class="sec-head"><h1>Рейтинг</h1><label class="rank-search"><span class="hint">Найти игрока</span><input id="rank-q" type="search" placeholder="например, Medvedev" autocomplete="off"></label></div>
+        <p class="hint">Топ-100 мужского и женского тура. Метка «играет» — игрок еще в сетке турнира, который идет сейчас. Место в рейтинге показано и в сетках рядом с именем.</p>
+      </section>
+      <div class="rank-grid ${tours.length>1?"two":""}">${cols}</div>`;
+  }
+  app.addEventListener("input", e=>{
+    if (e.target.id!=="rank-q") return;
+    const q = rkey(e.target.value);
+    app.querySelectorAll("table.rank tbody tr").forEach(tr=>{ tr.hidden = !!q && !q.split(" ").every(w=>tr.dataset.q.includes(w)); });
+  });
+
   // ---------- bracket: collapsing & sections ----------
   const isPlayed = m => !!m.w || !!(m.a && m.a.bye) || !!(m.b && m.b.bye);
   const roundDone = r => (r.matches||[]).length>0 && r.matches.every(isPlayed);
@@ -510,7 +571,7 @@ footer{color:var(--muted);font-size:12px}
   function route(){
     const h = (location.hash||"").replace(/^#/,"");
     document.querySelectorAll("[data-nav]").forEach(a=>{
-      const on = (h==="season" || h.startsWith("t-")) ? a.dataset.nav==="season" : a.dataset.nav==="now";
+      const on = h==="rank" ? a.dataset.nav==="rank" : (h==="season" || h.startsWith("t-")) ? a.dataset.nav==="season" : a.dataset.nav==="now";
       if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
     });
     if (state.err){ app.innerHTML = `<div class="state">${esc(state.err)}</div>`; return; }
@@ -518,6 +579,7 @@ footer{color:var(--muted);font-size:12px}
     let html;
     if (h.startsWith("t-")) html = viewTournament(h.slice(2));
     else if (h==="season") html = viewSeason();
+    else if (h==="rank") html = viewRank();
     else html = viewNow();
     app.innerHTML = html;
   }
@@ -567,7 +629,7 @@ footer{color:var(--muted);font-size:12px}
       const r = await fetch("data/tablo.json?ts=" + Date.now(), {cache:"no-store"});
       if (!r.ok) throw new Error(r.status);
       const j = await r.json();
-      state.seasons = j.seasons || {}; state.draws = j.draws || {};
+      state.seasons = j.seasons || {}; state.draws = j.draws || {}; state.rankings = j.rankings || {}; buildRank();
       state.err = null; rebuild(); setStamp();
       const y = window.scrollY; route(); window.scrollTo(0, y);
     }catch(e){
