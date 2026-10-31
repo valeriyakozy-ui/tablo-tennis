@@ -116,6 +116,13 @@ table.rank .star{margin:0 6px 0 0}
 .mt .p.fav{background:color-mix(in srgb,var(--c-gs) 12%,transparent)}
 tr.prow.fav td{background:color-mix(in srgb,var(--c-gs) 9%,transparent)}
 .players .fav{font-weight:600}
+.mine-sec{gap:8px}
+.mine-toggle{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;background:none;border:0;padding:0;cursor:pointer;text-align:left;color:var(--ink)}
+.mine-count{font-family:var(--f-body);font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted);margin-left:6px;vertical-align:3px}
+.mine-act{font-size:14px;color:var(--accent);font-weight:600;white-space:nowrap}
+.mine-sum{margin:0;font-size:14px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
+.mine-sum b{color:var(--ink)}
+.mine-sum span{font-weight:600}
 .mine{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .mine-row{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);align-items:baseline;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--line)}
 .mine-row:last-child{border-bottom:0}
@@ -168,6 +175,12 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 
 /* live tournament cards */
 .live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+@media (max-width:700px){
+  .live-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:max(16px, env(safe-area-inset-left, 0px));gap:10px;margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px)));padding:2px max(16px, env(safe-area-inset-left, 0px)) 6px}
+  .live-grid .tcard{flex:0 0 230px;scroll-snap-align:start;padding:12px 14px;gap:6px}
+  .live-grid .tcard h3{font-size:19px}
+  .live-grid .state{flex:1 0 100%}
+}
 .tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;text-decoration:none;min-width:0}
 @media (hover:hover){.tcard:hover{border-color:var(--accent)}}
 .tcard h3{font-size:22px}
@@ -673,6 +686,8 @@ footer{color:var(--muted);font-size:12px}
     e.preventDefault(); e.stopPropagation(); toggleFav(b.dataset.fav);
   }, true);
   app.addEventListener("click", e=>{
+    const mt = e.target.closest("[data-mine-toggle]");
+    if (mt){ const open = mt.getAttribute("aria-expanded")!=="true"; try{ localStorage.setItem("tablo-mine-open", open?"1":"0"); }catch(err){} keepScroll(); return; }
     const f = e.target.closest("[data-onlyfav]"); if (!f) return;
     state.onlyFav = !state.onlyFav; keepScroll();
   });
@@ -706,9 +721,23 @@ footer{color:var(--muted);font-size:12px}
         info = `<a href="#t-${esc(nx.t.id)}" data-g="${esc(GROUP[nx.t.cat]||"")}">${esc(nx.t.name)}</a><span>${esc(nx.r.name)}</span><span>${when}</span><span class="hint">${opp}</span>`;
         sortKey = nx.m.st==="live" ? "0" : nx.when;
       }
-      return {sortKey, html:`<div class="mine-row" data-pk="${esc(k)}">${starBtn(name)}<b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
+      return {sortKey, name, nx, html:`<div class="mine-row" data-pk="${esc(k)}">${starBtn(name)}<b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
     }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey));
-    return `<section class="sec"><div class="sec-head"><h2>My players</h2><span class="hint">Saved on this device</span></div><div class="mine">${rows.map(r=>r.html).join("")}</div></section>`;
+    let open = false; try{ open = localStorage.getItem("tablo-mine-open")==="1"; }catch(e){}
+    const first = rows.find(r=>r.nx);
+    let summary = "";
+    if (first){
+      const m = first.nx.m, day = dayOfMatch(m);
+      const when = m.st==="live" ? "live now" : m.t ? `${day===today?"today":fmtShort(day)}, ${m.nb?"not before ":""}${fmtTime(m.t)}` : day ? `${fmtShort(day)}, time TBC` : "date TBC";
+      summary = `Next: <b>${esc(first.name)}</b>, ${esc(when)}, <span data-g="${esc(GROUP[first.nx.t.cat]||"")}">${esc(first.nx.t.name)}</span> ${esc(first.nx.r.name)}`;
+    } else summary = "No matches scheduled for your players";
+    return `<section class="sec mine-sec">
+      <button class="mine-toggle" type="button" data-mine-toggle aria-expanded="${open}">
+        <h2>My players <span class="mine-count">${keys.length}</span></h2>
+        <span class="mine-act">${open?"Hide −":"Show +"}</span>
+      </button>
+      ${open ? `<div class="mine">${rows.map(r=>r.html).join("")}</div><p class="hint">Saved on this device.</p>` : `<p class="mine-sum">${summary}</p>`}
+    </section>`;
   }
 
   // ---------- bracket: collapsing & sections ----------
