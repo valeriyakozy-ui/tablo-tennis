@@ -61,7 +61,10 @@ button{font:inherit;color:inherit}
 .nav a{text-decoration:none;padding:7px 12px;border-radius:999px;font-size:14px;font-weight:500;color:var(--board-muted)}
 .nav a[aria-current="page"]{background:var(--board-ink);color:var(--board)}
 .nav a:hover{color:var(--board-ink)}
-.stamp{font-size:12px;color:var(--board-muted);width:100%}
+.stamp{font-size:12px;color:var(--board-muted);width:100%;display:flex;flex-wrap:wrap;gap:2px 16px}
+.chip-sub{margin-left:8px;font-weight:600}
+.nowtag{font-style:normal;font-family:var(--f-body);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:none;margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink);vertical-align:2px}
+.row.hint{gap:4px 14px}
 .tours{display:flex;border:1px solid color-mix(in srgb,var(--board-muted) 45%,transparent);border-radius:999px;padding:2px}
 .tours button{background:none;border:0;padding:5px 12px;border-radius:999px;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;color:var(--board-muted);cursor:pointer}
 .tours button[aria-pressed="true"]{background:var(--wta-on,var(--board-ink));color:var(--board)}
@@ -192,7 +195,7 @@ footer{color:var(--muted);font-size:12px}
 <body>
 <header class="board">
   <div class="wrap">
-    <div class="brand">Табло ATP · WTA <small>сезон 2026</small></div>
+    <div class="brand">Табло ATP и WTA <small>сезон 2026</small></div>
     <div class="tours" role="group" aria-label="Тур">
       <button type="button" data-tour="all">Все</button>
       <button type="button" data-tour="atp">ATP</button>
@@ -338,13 +341,13 @@ footer{color:var(--muted);font-size:12px}
       <a class="tcard" href="#t-${esc(t.id)}">
         <div class="row">${catMark(t)}${statusPill(t)}</div>
         <h3>${esc(t.name)}</h3>
-        <div class="row hint">${esc(t.city)} · ${fmtRange(t.start,t.end)}</div>
+        <div class="row hint"><span>${esc(t.city)}</span><span>${fmtRange(t.start,t.end)}</span></div>
         <div class="row">${surfMark(t)}<span class="pts">${(CAT[t.cat]||{}).pts||""}</span></div>
       </a>`).join("") : `<div class="state">Сейчас турниров нет. Ближайшие — ниже.</div>`;
 
     const days = Object.keys(byDay).length ? Object.keys(byDay).map(day=>`
       <div class="day">
-        <h3><b>${day===today?"Сегодня":esc(fmtDayLong(day))}</b>${day===today?" · "+esc(fmtDay(day)):""}</h3>
+        <h3><b>${day===today?"Сегодня":esc(fmtDayLong(day))}</b>${day===today?", "+esc(fmtDay(day)):""}</h3>
         ${byDay[day].map(({t,r,m})=>schedRow(t,r,m,true)).join("")}
       </div>`).join("") : `<div class="state">На ближайшие дни матчей с назначенным временем пока нет.</div>`;
 
@@ -370,7 +373,7 @@ footer{color:var(--muted);font-size:12px}
     const a = m.a, b = m.b;
     const players = `<span class="${m.w===1?"w":""}">${esc(plain(a))}</span><span class="vs">—</span><span class="${m.w===2?"w":""}">${esc(plain(b))}</span>`;
     const res = m.st==="live" ? `<span class="pill live">Идет</span>` : (m.w && m.sc ? esc(m.sc) : "");
-    const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a> · `:"") + esc(r.name) + (m.court?` · ${esc(m.court)}`:"");
+    const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a>, `:"") + esc(r.name) + (m.court?`, ${esc(m.court)}`:"");
     return `<div class="mrow"><div class="time">${time}</div><div class="who"><div class="players">${players}</div><div class="ctx">${ctx}</div></div><div class="res">${res}</div></div>`;
   }
 
@@ -486,7 +489,7 @@ footer{color:var(--muted);font-size:12px}
     if (parts){
       const name = parts===4 ? ["Верхняя четверть","Вторая четверть","Третья четверть","Нижняя четверть"] : ["Верхняя половина","Нижняя половина"];
       tools += `<div class="chips" role="group" aria-label="Часть сетки"><button class="chip" type="button" data-sec="0" aria-pressed="${sec===0}">Вся сетка</button>${
-        name.map((nm,k)=>{ const lb=sectionLabel(first,k+1,parts); return `<button class="chip" type="button" data-sec="${k+1}" aria-pressed="${sec===k+1}" title="${esc(nm)}">${parts===4?(k+1)+"/4":(k?"Низ":"Верх")}${lb?" · "+esc(lb):""}</button>`; }).join("")}</div>`;
+        name.map((nm,k)=>{ const lb=sectionLabel(first,k+1,parts); return `<button class="chip" type="button" data-sec="${k+1}" aria-pressed="${sec===k+1}" title="${esc(nm)}">${parts===4?(k+1)+"/4":(k?"Низ":"Верх")}${lb?`<span class="chip-sub">${esc(lb)}</span>`:""}</button>`; }).join("")}</div>`;
     }
     tools += anyC ? `<button class="linkbtn" type="button" data-brk="open">Развернуть все круги</button>`
                   : (autoN ? `<button class="linkbtn" type="button" data-brk="auto">Свернуть сыгранные круги</button>` : "");
@@ -497,7 +500,7 @@ footer{color:var(--muted);font-size:12px}
         return `<button class="bcol-c" type="button" data-col="${i}" aria-expanded="false" title="Развернуть ${esc(r.name)}"><span class="plus">+</span><span class="v"><b>${esc(r.name)}</b><small>${played ? played+" сыграно" : ms.length+" матчей"}</small></span></button>`;
       }
       const now = i===auto.current && !roundDone(r) ? 1 : 0;
-      return `<div class="bcol"><button class="colhead" type="button" data-col="${i}" aria-expanded="true" data-now="${now}"><b>${esc(r.name)}${now?" · сейчас":""}</b><span>свернуть −</span></button><div class="stack">${ms.map(matchCard).join("")}</div></div>`;
+      return `<div class="bcol"><button class="colhead" type="button" data-col="${i}" aria-expanded="true" data-now="${now}"><b>${esc(r.name)}${now?`<em class="nowtag">сейчас</em>`:""}</b><span>свернуть −</span></button><div class="stack">${ms.map(matchCard).join("")}</div></div>`;
     }).join("");
     const hint = autoN && !(Object.keys(manual).length) ? `<p class="hint">Сыгранные круги свернуты, чтобы были видны те, кто еще в турнире. Нажмите на свернутый круг, чтобы открыть его.</p>` : "";
     return `${tools?`<div class="btools">${tools}</div>`:""}${hint}<div class="bracket-frame"><div class="bracket">${cols}</div></div>${dr.note?"":""}`;
@@ -516,7 +519,7 @@ footer{color:var(--muted);font-size:12px}
     if (h.startsWith("t-")) html = viewTournament(h.slice(2));
     else if (h==="season") html = viewSeason();
     else html = viewNow();
-    app.innerHTML = html + `<footer>Источники: ATP Tour, WTA, ITF, официальные сайты турниров. Счет указан с точки зрения победителя.</footer>`;
+    app.innerHTML = html;
   }
   window.addEventListener("hashchange", ()=>{ route(); window.scrollTo(0,0); });
   function keepScroll(){ const y = window.scrollY; route(); window.scrollTo(0,y); }
@@ -549,7 +552,10 @@ footer{color:var(--muted);font-size:12px}
   function setStamp(meta){
     if (!state.season) return;
     const u = state.season.updatedAt ? new Date(state.season.updatedAt) : null;
-    stamp.textContent = (u ? "Данные обновлены " + u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Данные загружены") + (meta && meta.stale ? " · связь с базой пока не подтверждена" : "") + (TZ ? " · время " + TZ : "");
+    const parts = [u ? "Данные обновлены " + u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Данные загружены"];
+    if (meta && meta.stale) parts.push("Связь с базой пока не подтверждена");
+    if (TZ) parts.push("Время " + TZ);
+    stamp.innerHTML = parts.map(x=>`<span>${esc(x)}</span>`).join("");
   }
 
   // ---------- data ----------
@@ -566,7 +572,7 @@ footer{color:var(--muted);font-size:12px}
       const y = window.scrollY; route(); window.scrollTo(0, y);
     }catch(e){
       if (!state.season){ state.err = "Не получилось загрузить данные. Проверьте интернет и откройте приложение еще раз."; route(); stamp.textContent = "Нет связи"; }
-      else stamp.textContent += " · нет связи, показаны сохраненные данные";
+      else stamp.insertAdjacentHTML("beforeend", "<span>Нет связи, показаны сохраненные данные</span>");
     }
   }
   load();
