@@ -335,6 +335,7 @@ footer{color:var(--muted);font-size:12px}
   // ---------- my players (stored on this device) ----------
   let FAV = {};
   try{ FAV = JSON.parse(localStorage.getItem("tablo-favs")||"{}") || {}; }catch(e){ FAV = {}; }
+  state.mineOpen = false; try{ state.mineOpen = localStorage.getItem("tablo-mine-open")==="1"; }catch(e){}
   const isFav = n => !!FAV[rkey(n)];
   const favable = p => p && p.n && !p.team && !p.bye && !p.tbd && p.n!=="Qualifier";
   const starBtn = n => { const on = isFav(n); const lbl = (on?"Remove from":"Add to")+" my players";
@@ -687,7 +688,7 @@ footer{color:var(--muted);font-size:12px}
   }, true);
   app.addEventListener("click", e=>{
     const mt = e.target.closest("[data-mine-toggle]");
-    if (mt){ const open = mt.getAttribute("aria-expanded")!=="true"; try{ localStorage.setItem("tablo-mine-open", open?"1":"0"); }catch(err){} keepScroll(); return; }
+    if (mt){ state.mineOpen = !state.mineOpen; try{ localStorage.setItem("tablo-mine-open", state.mineOpen?"1":"0"); }catch(err){} keepScroll(); return; }
     const f = e.target.closest("[data-onlyfav]"); if (!f) return;
     state.onlyFav = !state.onlyFav; keepScroll();
   });
@@ -723,7 +724,7 @@ footer{color:var(--muted);font-size:12px}
       }
       return {sortKey, name, nx, html:`<div class="mine-row" data-pk="${esc(k)}">${starBtn(name)}<b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
     }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey));
-    let open = false; try{ open = localStorage.getItem("tablo-mine-open")==="1"; }catch(e){}
+    const open = state.mineOpen;
     const first = rows.find(r=>r.nx);
     let summary = "";
     if (first){

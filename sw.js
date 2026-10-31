@@ -1,4 +1,4 @@
-const SHELL = "tablo-shell-v2";
+const SHELL = "tablo-shell-v3";
 const DATA = "tablo-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES)).then(() => self.skipWaiting())); });
@@ -21,7 +21,7 @@ self.addEventListener("fetch", e => {
   }
   // app shell: network first so updates arrive, cache when offline
   if (url.origin === self.location.origin) {
-    e.respondWith(fetch(e.request).then(r => { const copy = r.clone(); caches.open(SHELL).then(c => c.put(e.request, copy)); return r; })
+    e.respondWith(fetch(e.request, {cache: "no-cache"}).then(r => { const copy = r.clone(); caches.open(SHELL).then(c => c.put(e.request, copy)); return r; })
       .catch(() => caches.match(e.request).then(hit => hit || caches.match("index.html"))));
   }
 });
