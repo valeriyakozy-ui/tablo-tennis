@@ -238,18 +238,18 @@ footer{color:var(--muted);font-size:12px}
 (function(){
   const CAT = {
     gs:{label:"Большой шлем",pts:"2000 очков"},
-    m1000:{label:"Masters 1000",pts:"1000 очков"},
+    m1000:{label:"ATP Masters 1000",pts:"1000 очков"},
     a500:{label:"ATP 500",pts:"500 очков"},
     a250:{label:"ATP 250",pts:"250 очков"},
-    finals:{label:"Итоговый",pts:"до 1500 очков"},
-    nextgen:{label:"Next Gen",pts:"без очков"},
+    finals:{label:"ATP Finals",pts:"до 1500 очков"},
+    nextgen:{label:"Next Gen ATP",pts:"без очков"},
     davis:{label:"Кубок Дэвиса",pts:"командный"},
     laver:{label:"Laver Cup",pts:"командный"},
-    team:{label:"Командный",pts:"командный"},
+    team:{label:"United Cup",pts:"командный"},
     w1000:{label:"WTA 1000",pts:"1000 очков"},
     w500:{label:"WTA 500",pts:"500 очков"},
     w250:{label:"WTA 250",pts:"250 очков"},
-    wfinals:{label:"Итоговый",pts:"до 1500 очков"},
+    wfinals:{label:"WTA Finals",pts:"до 1500 очков"},
     bjk:{label:"Кубок Б. Дж. Кинг",pts:"командный"}
   };
   const GROUP = {gs:"gs",m1000:"1000",w1000:"1000",a500:"500",w500:"500",a250:"250",w250:"250",finals:"finals",wfinals:"finals",nextgen:"finals",davis:"team",laver:"team",team:"team",bjk:"team"};
@@ -270,7 +270,8 @@ footer{color:var(--muted);font-size:12px}
     const ups = Object.values(state.seasons).map(s=>s.updatedAt).filter(Boolean).sort();
     state.season = list.length ? {tournaments:list, updatedAt:ups[ups.length-1]} : null;
   }
-  const inTour = t => state.tour==="all" || t.tour===state.tour;
+  // United Cup is one mixed event listed in both calendars: show it once in the combined view
+  const inTour = t => state.tour==="all" ? !(t.cat==="team" && t.tour==="wta") : t.tour===state.tour;
   function paintTours(){ document.querySelectorAll("[data-tour]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.tour===state.tour))); }
   document.querySelector(".tours").addEventListener("click", e=>{
     const b = e.target.closest("[data-tour]"); if(!b) return;
@@ -309,7 +310,8 @@ footer{color:var(--muted);font-size:12px}
 
   // ---------- small renderers ----------
   const tourMark = t => `<span class="tour" data-t="${esc(t.tour)}">${t.tour==="wta"?"WTA":"ATP"}</span>`;
-  const catMark = t => tourMark(t)+`<span class="cat" data-c="${esc(t.cat)}">${esc((CAT[t.cat]||{}).label||t.cat)}</span>`;
+  const catLabel = t => t.cat==="gs" ? `Большой шлем ${t.tour==="wta"?"WTA":"ATP"}` : ((CAT[t.cat]||{}).label||t.cat);
+  const catMark = t => `<span class="cat" data-c="${esc(t.cat)}">${esc(catLabel(t))}</span>`;
   const surfMark = t => { const s=SURF[t.surf]||SURF.mixed; return `<span class="surf" style="--c:var(${s[1]})">${s[0]}</span>`; };
   const statusPill = t => { const s=tStatus(t); return s==="live"?`<span class="pill live">Идет</span>`:s==="done"?`<span class="pill done">Завершен</span>`:`<span class="pill">Скоро</span>`; };
 
@@ -366,7 +368,7 @@ footer{color:var(--muted);font-size:12px}
         <div class="row">${catMark(t)}${statusPill(t)}</div>
         <h3>${esc(t.name)}</h3>
         <div class="row hint"><span>${esc(t.city)}</span><span>${fmtRange(t.start,t.end)}</span></div>
-        <div class="row">${surfMark(t)}<span class="pts">${(CAT[t.cat]||{}).pts||""}</span></div>
+        <div class="row">${surfMark(t)}</div>
       </a>`).join("") : `<div class="state">Сейчас турниров нет. Ближайшие — ниже.</div>`;
 
     const days = Object.keys(byDay).length ? Object.keys(byDay).map(day=>`
@@ -444,7 +446,7 @@ footer{color:var(--muted);font-size:12px}
           <div><span class="lbl">Даты</span>${esc(fmtDay(t.start))} — ${esc(fmtDay(t.end))}</div>
           <div><span class="lbl">Место</span>${esc(t.city)}, ${esc(t.country)}</div>
           <div><span class="lbl">Покрытие</span>${surfMark(t)}</div>
-          <div><span class="lbl">Очки победителю</span>${esc((CAT[t.cat]||{}).pts||"—")}</div>
+          ${["gs","finals","wfinals"].includes(t.cat)?`<div><span class="lbl">Очки победителю</span>${esc(CAT[t.cat].pts)}</div>`:""}
         </div>
       </div>`;
     if (t.champ) head += `<div class="champ"><span class="lbl">${t.tour==="wta"?"Победительница":"Победитель"}</span><b>${esc(t.champ)}</b>${t.runner?`<span>в финале — ${esc(t.runner)}, ${esc(t.score)}</span>`:""}</div>`;
