@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Табло ATP и WTA</title>
+<title>ATP & WTA Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
-<meta name="description" content="Календарь ATP и WTA, сетки турниров и расписание матчей с временем в вашем часовом поясе">
+<meta name="description" content="ATP and WTA calendar, tournament draws, order of play in your time zone and live rankings">
 <meta name="theme-color" content="#13283f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Табло">
+<meta name="apple-mobile-web-app-title" content="Tennis Board">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -109,6 +109,21 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pick ol{margin:6px 0 2px;padding-left:1.4em;display:flex;flex-direction:column;gap:2px;font-weight:500}
 .pick-go{font-size:14px;color:var(--accent);font-weight:600}
 @media (hover:hover){.pick:hover{border-color:var(--accent)}}
+.star{background:none;border:0;padding:0 2px;margin-left:4px;font-size:15px;line-height:1;color:var(--muted);cursor:pointer;flex:none}
+.star[aria-pressed="true"]{color:var(--c-gs)}
+@media (hover:hover){.star:hover{color:var(--c-gs)}}
+table.rank .star{margin:0 6px 0 0}
+.mt .p.fav{background:color-mix(in srgb,var(--c-gs) 12%,transparent)}
+tr.prow.fav td{background:color-mix(in srgb,var(--c-gs) 9%,transparent)}
+.players .fav{font-weight:600}
+.mine{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.mine-row{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);align-items:baseline;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.mine-row:last-child{border-bottom:0}
+.mine-row .star{margin:0}
+.mine-name{white-space:nowrap}
+.mine-info{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:14px;justify-content:flex-end;min-width:0}
+.mine-info a{font-weight:600;text-decoration:none}
+@media (max-width:560px){.mine-row{grid-template-columns:auto auto minmax(0,1fr)}.mine-info{grid-column:1/-1;justify-content:flex-start;padding-left:24px}}
 .legend{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;font-size:14px}
 .legend span{font-weight:600}
 .legend .hint{font-weight:400}
@@ -255,55 +270,62 @@ footer{color:var(--muted);font-size:12px}
 <body>
 <header class="board">
   <div class="wrap">
-    <div class="brand">Табло ATP и WTA <small>сезон 2026</small></div>
-    <div class="tours" role="group" aria-label="Тур">
-      <button type="button" data-tour="all">Все</button>
+    <div class="brand">ATP &amp; WTA Board <small>2026 season</small></div>
+    <div class="tours" role="group" aria-label="Tour">
+      <button type="button" data-tour="all">All</button>
       <button type="button" data-tour="atp">ATP</button>
       <button type="button" data-tour="wta">WTA</button>
     </div>
-    <nav class="nav" aria-label="Разделы">
-      <a href="#now" data-nav="now">Сейчас</a>
-      <a href="#season" data-nav="season">Календарь</a>
-      <a href="#rank" data-nav="rank">Рейтинг</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#now" data-nav="now">Now</a>
+      <a href="#season" data-nav="season">Calendar</a>
+      <a href="#rank" data-nav="rank">Rankings</a>
     </nav>
-    <button class="install" id="install" type="button" hidden>Установить приложение</button>
-    <div class="stamp" id="stamp">Загружаю данные…</div>
-    <div class="ios-tip" id="ios-tip" hidden>На iPhone и iPad: нажмите «Поделиться» внизу Safari, затем «На экран „Домой“».</div>
+    <button class="install" id="install" type="button" hidden>Install app</button>
+    <div class="stamp" id="stamp">Loading data…</div>
+    <div class="ios-tip" id="ios-tip" hidden>On iPhone and iPad: tap Share at the bottom of Safari, then Add to Home Screen.</div>
   </div>
 </header>
 
 <main class="wrap" id="app">
-  <div class="state">Загружаю календарь, сетки и расписание. Здесь будут турниры ATP и WTA, командные кубки с временем матчей в вашем часовом поясе.</div>
+  <div class="state">Loading the calendar, draws and schedule. ATP and WTA events and team cups will appear here, with match times in your time zone.</div>
 </main>
 
 <script>
 (function(){
   const CAT = {
-    gs:{label:"Большой шлем",pts:"2000 очков"},
-    m1000:{label:"ATP Masters 1000",pts:"1000 очков"},
-    a500:{label:"ATP 500",pts:"500 очков"},
-    a250:{label:"ATP 250",pts:"250 очков"},
-    finals:{label:"ATP Finals",pts:"до 1500 очков"},
-    nextgen:{label:"Next Gen ATP",pts:"без очков"},
-    davis:{label:"Кубок Дэвиса",pts:"командный"},
-    laver:{label:"Laver Cup",pts:"командный"},
-    team:{label:"United Cup",pts:"командный"},
-    w1000:{label:"WTA 1000",pts:"1000 очков"},
-    w500:{label:"WTA 500",pts:"500 очков"},
-    w250:{label:"WTA 250",pts:"250 очков"},
-    wfinals:{label:"WTA Finals",pts:"до 1500 очков"},
-    bjk:{label:"Кубок Б. Дж. Кинг",pts:"командный"}
+    gs:{label:"Grand Slam",pts:"2000 points"},
+    m1000:{label:"ATP Masters 1000",pts:"1000 points"},
+    a500:{label:"ATP 500",pts:"500 points"},
+    a250:{label:"ATP 250",pts:"250 points"},
+    finals:{label:"ATP Finals",pts:"up to 1500 points"},
+    nextgen:{label:"Next Gen ATP",pts:"no ranking points"},
+    davis:{label:"Davis Cup",pts:"team event"},
+    laver:{label:"Laver Cup",pts:"team event"},
+    team:{label:"United Cup",pts:"team event"},
+    w1000:{label:"WTA 1000",pts:"1000 points"},
+    w500:{label:"WTA 500",pts:"500 points"},
+    w250:{label:"WTA 250",pts:"250 points"},
+    wfinals:{label:"WTA Finals",pts:"up to 1500 points"},
+    bjk:{label:"Billie Jean King Cup",pts:"team event"}
   };
   const GROUP = {gs:"gs",m1000:"1000",w1000:"1000",a500:"500",w500:"500",a250:"250",w250:"250",finals:"finals",wfinals:"finals",nextgen:"finals",davis:"team",laver:"team",team:"team",bjk:"team"};
-  const FILTERS = [["all","Все"],["gs","Большой шлем"],["1000","1000"],["500","500"],["250","250"],["finals","Итоговые"],["team","Командные"]];
-  const SURF = {hard:["Хард","--hard"],"hard-i":["Хард, зал","--hard-i"],clay:["Грунт","--clay"],grass:["Трава","--grass"],mixed:["Разные","--mixed"]};
-  const MONTHS = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  const FILTERS = [["all","All"],["gs","Grand Slams"],["1000","1000"],["500","500"],["250","250"],["finals","Finals"],["team","Team events"]];
+  const SURF = {hard:["Hard","--hard"],"hard-i":["Indoor hard","--hard-i"],clay:["Clay","--clay"],grass:["Grass","--grass"],mixed:["Various","--mixed"]};
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
   const state = {seasons:{}, season:null, draws:{}, rankings:{}, err:null, filter:"all", tour:"all", tab:{}, collapse:{}, section:{}};
   const rkey = n => String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[\s-]+/).filter(Boolean).sort().join(" ");
   let RANK = {};
   function buildRank(){ RANK = {}; for (const [tour,rk] of Object.entries(state.rankings)) (rk.list||[]).forEach(x=>{ RANK[rkey(x.n)] = {r:x.r, p:x.p, tour}; }); }
   const rankOf = p => (p && p.n && !p.team) ? RANK[rkey(p.n)] : null;
+  // ---------- my players (stored on this device) ----------
+  let FAV = {};
+  try{ FAV = JSON.parse(localStorage.getItem("tablo-favs")||"{}") || {}; }catch(e){ FAV = {}; }
+  const isFav = n => !!FAV[rkey(n)];
+  const favable = p => p && p.n && !p.team && !p.bye && !p.tbd && p.n!=="Qualifier";
+  const starBtn = n => { const on = isFav(n); const lbl = (on?"Remove from":"Add to")+" my players";
+    return `<button class="star" type="button" data-fav="${esc(n)}" data-k="${esc(rkey(n))}" aria-pressed="${on}" aria-label="${lbl}" title="${lbl}">${on?"★":"☆"}</button>`; };
   try{ state.filter = localStorage.getItem("tablo-filter2") || "all"; state.tour = localStorage.getItem("tablo-tour") || "all"; }catch(e){}
   function rebuild(){
     const list = [];
@@ -331,18 +353,20 @@ footer{color:var(--muted);font-size:12px}
   const localISO = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
   const todayISO = () => localISO(new Date());
   const parseDay = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
-  const fmtDay = s => parseDay(s).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
-  const fmtDayLong = s => parseDay(s).toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});
-  const fmtShort = s => { const d=parseDay(s); return d.getDate()+"."+pad(d.getMonth()+1); };
+  const LOC = "en-GB";
+  const fmtDay = s => parseDay(s).toLocaleDateString(LOC,{day:"numeric",month:"long"});
+  const fmtDayLong = s => parseDay(s).toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long"});
+  const fmtShort = s => parseDay(s).toLocaleDateString(LOC,{day:"numeric",month:"short"});
   const fmtRange = (a,b) => {
     const A=parseDay(a), B=parseDay(b);
-    if (A.getMonth()===B.getMonth()) return A.getDate()+"–"+B.getDate()+" "+B.toLocaleDateString("ru-RU",{month:"short"}).replace(".","");
-    return fmtShort(a)+"–"+fmtShort(b);
+    const mon = d => d.toLocaleDateString(LOC,{month:"short"});
+    if (A.getMonth()===B.getMonth()) return A.getDate()+"–"+B.getDate()+" "+mon(B);
+    return A.getDate()+" "+mon(A)+"–"+B.getDate()+" "+mon(B);
   };
-  const fmtTime = iso => new Date(iso).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  const fmtTime = iso => new Date(iso).toLocaleTimeString(LOC,{hour:"2-digit",minute:"2-digit"});
   let TZ = "";
   try{
-    const parts = new Intl.DateTimeFormat("ru-RU",{timeZoneName:"short"}).formatToParts(new Date());
+    const parts = new Intl.DateTimeFormat(LOC,{timeZoneName:"short"}).formatToParts(new Date());
     TZ = (parts.find(p=>p.type==="timeZoneName")||{}).value || "";
   }catch(e){}
   const dayOfMatch = m => m.t ? localISO(new Date(m.t)) : (m.d || null);
@@ -352,32 +376,33 @@ footer{color:var(--muted);font-size:12px}
 
   // ---------- small renderers ----------
   const tourMark = t => `<span class="tour" data-t="${esc(t.tour)}">${t.tour==="wta"?"WTA":"ATP"}</span>`;
-  const catLabel = t => t.cat==="gs" ? `Большой шлем ${t.tour==="wta"?"WTA":"ATP"}` : ((CAT[t.cat]||{}).label||t.cat);
+  const catLabel = t => t.cat==="gs" ? `${t.tour==="wta"?"WTA":"ATP"} Grand Slam` : ((CAT[t.cat]||{}).label||t.cat);
   const catMark = t => `<span class="cat" data-c="${esc(t.cat)}">${esc(catLabel(t))}</span>`;
   const surfMark = t => { const s=SURF[t.surf]||SURF.mixed; return `<span class="surf" style="--c:var(${s[1]})">${s[0]}</span>`; };
-  const statusPill = t => { const s=tStatus(t); return s==="live"?`<span class="pill live">Идет</span>`:s==="done"?`<span class="pill done">Завершен</span>`:`<span class="pill">Скоро</span>`; };
+  const statusPill = t => { const s=tStatus(t); return s==="live"?`<span class="pill live">Live</span>`:s==="done"?`<span class="pill done">Finished</span>`:`<span class="pill">Upcoming</span>`; };
 
   function pName(p){
     if(!p) return `<span class="nm">—</span>`;
-    if(p.bye) return `<span class="nm">свободный проход</span>`;
-    if(p.tbd) return `<span class="nm">определится</span>`;
+    if(p.bye) return `<span class="nm">bye</span>`;
+    if(p.tbd) return `<span class="nm">TBD</span>`;
     const rk = rankOf(p);
-    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"")+(rk?`<span class="rk" title="Место в рейтинге">№${rk.r}</span>`:"");
+    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"")+(rk?`<span class="rk" title="Ranking">#${rk.r}</span>`:"")+(favable(p)?starBtn(p.n):"");
   }
-  const plain = p => !p ? "—" : p.bye ? "свободный проход" : p.tbd ? "определится" : p.n + (p.s?` [${p.s}]`:"") + (p.tag?` (${p.tag})`:"");
+  const plain = p => !p ? "—" : p.bye ? "bye" : p.tbd ? "TBD" : p.n + (p.s?` [${p.s}]`:"") + (p.tag?` (${p.tag})`:"");
 
   function matchFoot(m){
-    if (m.st==="live") return `<span class="lv">Идет</span><span>${m.t?fmtTime(m.t):""}</span>`;
+    if (m.st==="live") return `<span class="lv">Live</span><span>${m.t?fmtTime(m.t):""}</span>`;
     if (m.w && m.sc) return `<span class="sc">${esc(m.sc)}</span><span>${m.d?fmtShort(m.d):""}</span>`;
-    if (m.t) return `<span>${fmtShort(dayOfMatch(m))}, ${m.nb?"не ранее ":""}${fmtTime(m.t)}</span><span></span>`;
-    if (m.d) return `<span>${fmtShort(m.d)}, время уточняется</span><span></span>`;
+    if (m.t) return `<span>${fmtShort(dayOfMatch(m))}, ${m.nb?"not before ":""}${fmtTime(m.t)}</span><span></span>`;
+    if (m.d) return `<span>${fmtShort(m.d)}, time TBC</span><span></span>`;
     return "";
   }
   function matchCard(m){
     const side = (p,i) => {
-      const empty = !p || p.bye || p.tbd || (p.tag==="Q" && p.n==="Квалификант");
+      const empty = !p || p.bye || p.tbd || (p.tag==="Q" && p.n==="Qualifier");
       const cls = m.w ? (m.w===i?"win":"lose") : (empty?"empty":"");
-      return `<div class="p ${cls}">${pName(p)}</div>`;
+      const fk = favable(p) ? rkey(p.n) : "";
+      return `<div class="p ${cls}${fk && FAV[fk]?" fav":""}"${fk?` data-pk="${esc(fk)}"`:""}>${pName(p)}</div>`;
     };
     const foot = matchFoot(m);
     return `<div class="mt ${m.st==="live"?"live":""}">${side(m.a,1)}${side(m.b,2)}${foot?`<div class="foot">${foot}</div>`:""}</div>`;
@@ -411,37 +436,39 @@ footer{color:var(--muted);font-size:12px}
         <h3>${esc(t.name)}</h3>
         <div class="row hint"><span>${esc(t.city)}</span><span>${fmtRange(t.start,t.end)}</span></div>
         <div class="row">${surfMark(t)}</div>
-      </a>`).join("") : `<div class="state">Сейчас турниров нет. Ближайшие — ниже.</div>`;
+      </a>`).join("") : `<div class="state">No tournaments are on right now. The next ones are below.</div>`;
 
     const days = Object.keys(byDay).length ? Object.keys(byDay).map(day=>`
       <div class="day">
-        <h3><b>${day===today?"Сегодня":esc(fmtDayLong(day))}</b>${day===today?", "+esc(fmtDay(day)):""}</h3>
+        <h3><b>${day===today?"Today":esc(fmtDayLong(day))}</b>${day===today?", "+esc(fmtDay(day)):""}</h3>
         ${byDay[day].map(({t,r,m})=>schedRow(t,r,m,true)).join("")}
-      </div>`).join("") : `<div class="state">На ближайшие дни матчей с назначенным временем пока нет.</div>`;
+      </div>`).join("") : `<div class="state">No scheduled matches for the next few days yet.</div>`;
 
     const nextRows = next.map(seasonRow).join("");
 
-    return `
+    return viewMine() + `
       <section class="sec">
-        <div class="sec-head"><h2>Идут сейчас</h2></div>
+        <div class="sec-head"><h2>On now</h2></div>
         <div class="live-grid">${liveCards}</div>
       </section>
       <section class="sec">
-        <div class="sec-head"><h2>Матчи по дням</h2><span class="hint">Время — ваше местное${TZ?" ("+esc(TZ)+")":""}. «Не ранее» — матч начнется сразу после предыдущего на корте.</span></div>
+        <div class="sec-head"><h2>Order of play</h2><span class="hint">Times are in your local time${TZ?" ("+esc(TZ)+")":""}. “Not before” means the match follows the previous one on that court.</span></div>
         <div class="days">${days}</div>
       </section>
       <section class="sec">
-        <div class="sec-head"><h2>Дальше в сезоне</h2><a class="hint" href="#season">Весь календарь →</a></div>
+        <div class="sec-head"><h2>Coming up</h2><a class="hint" href="#season">Full calendar →</a></div>
         <div>${nextRows}</div>
       </section>`;
   }
 
   function schedRow(t,r,m,withT){
-    const time = m.t ? `${fmtTime(m.t)}${m.nb?"<small>не ранее</small>":""}` : `—<small>уточняется</small>`;
+    const time = m.t ? `${fmtTime(m.t)}${m.nb?"<small>not before</small>":""}` : `—<small>TBC</small>`;
     const a = m.a, b = m.b;
-    const rkTag = p => { const rk = rankOf(p); return rk ? `<small class="rk" title="Место в рейтинге">№${rk.r}</small>` : ""; };
-    const players = `<span class="${m.w===1?"w":""}">${esc(plain(a))}${rkTag(a)}</span><span class="vs">—</span><span class="${m.w===2?"w":""}">${esc(plain(b))}${rkTag(b)}</span>`;
-    const res = m.st==="live" ? `<span class="pill live">Идет</span>` : (m.w && m.sc ? esc(m.sc) : "");
+    const rkTag = p => { const rk = rankOf(p); return rk ? `<small class="rk" title="Ranking">#${rk.r}</small>` : ""; };
+    const who = (p,i) => { const fk = favable(p) ? rkey(p.n) : "";
+      return `<span class="${m.w===i?"w":""}${fk && FAV[fk]?" fav":""}"${fk?` data-pk="${esc(fk)}"`:""}>${esc(plain(p))}${rkTag(p)}${fk?starBtn(p.n):""}</span>`; };
+    const players = `${who(a,1)}<span class="vs">—</span>${who(b,2)}`;
+    const res = m.st==="live" ? `<span class="pill live">Live</span>` : (m.w && m.sc ? esc(m.sc) : "");
     const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a>, `:"") + esc(r.name) + (m.court?`, ${esc(m.court)}`:"");
     return `<div class="mrow"><div class="time">${time}</div><div class="who"><div class="players">${players}</div><div class="ctx">${ctx}</div></div><div class="res">${res}</div></div>`;
   }
@@ -449,9 +476,9 @@ footer{color:var(--muted);font-size:12px}
   function seasonRow(t){
     const st = tStatus(t);
     let out;
-    if (t.champ) out = `<div class="lbl">${t.tour==="wta"?"Победительница":"Победитель"}</div><div><b>${esc(t.champ)}</b></div>${t.runner?`<div class="meta">в финале ${esc(t.runner)}, ${esc(t.score)}</div>`:""}`;
-    else if (t.note && st==="done") out = `<div class="lbl">Итог</div><div>${esc(t.note)}</div>`;
-    else out = `<div>${statusPill(t)}</div>${t.draw?`<div class="meta">Есть сетка и расписание</div>`:""}`;
+    if (t.champ) out = `<div class="lbl">Champion</div><div><b>${esc(t.champ)}</b></div>${t.runner?`<div class="meta">d. ${esc(t.runner)} ${esc(t.score)}</div>`:""}`;
+    else if (t.note && st==="done") out = `<div class="lbl">Result</div><div>${esc(t.note)}</div>`;
+    else out = `<div>${statusPill(t)}</div>${t.draw?`<div class="meta">Draw and schedule available</div>`:""}`;
     return `<a class="trow" data-st="${st}" href="#t-${esc(t.id)}">
       <div class="dates">${fmtRange(t.start,t.end)}</div>
       <div><div class="tname">${esc(t.name)}</div><div class="meta">${esc(t.city)}, ${esc(t.country)}</div><div class="row" style="margin-top:4px">${catMark(t)}${surfMark(t)}</div></div>
@@ -466,36 +493,36 @@ footer{color:var(--muted);font-size:12px}
     const body = Object.keys(months).sort().map(k=>{
       const m = Number(k.slice(5))-1;
       return `<section class="month sec"><h3>${MONTHS[m]} ${k.slice(0,4)}</h3><div>${months[k].map(seasonRow).join("")}</div></section>`;
-    }).join("") || `<div class="state">В этой категории турниров нет.</div>`;
+    }).join("") || `<div class="state">No tournaments in this category.</div>`;
     return `
       <section class="sec">
-        <div class="sec-head"><h1>Календарь сезона</h1><span class="hint">${ts.length} событий</span></div>
-        <div class="chips" role="group" aria-label="Категория">${FILTERS.map(([k,l])=>`<button class="chip" type="button" data-filter="${k}" aria-pressed="${k===f}">${l}</button>`).join("")}</div>
+        <div class="sec-head"><h1>Season calendar</h1><span class="hint">${ts.length} events</span></div>
+        <div class="chips" role="group" aria-label="Category">${FILTERS.map(([k,l])=>`<button class="chip" type="button" data-filter="${k}" aria-pressed="${k===f}">${l}</button>`).join("")}</div>
       </section>${body}`;
   }
 
   function viewTournament(id){
     const t = byId(id);
-    if (!t) return `<a class="back" href="#season">← Календарь</a><div class="state">Этого турнира нет в календаре.</div>`;
+    if (!t) return `<a class="back" href="#season">← Calendar</a><div class="state">This tournament is not in the calendar.</div>`;
     const dr = state.draws[id];
     const st = tStatus(t);
     let head = `
-      <a class="back" href="#season">← Календарь</a>
+      <a class="back" href="#season">← Calendar</a>
       <div class="thead">
         <div class="row">${catMark(t)}${statusPill(t)}</div>
         <h1>${esc(t.name)}</h1>
         <div class="facts">
-          <div><span class="lbl">Даты</span>${esc(fmtDay(t.start))} — ${esc(fmtDay(t.end))}</div>
-          <div><span class="lbl">Место</span>${esc(t.city)}, ${esc(t.country)}</div>
-          <div><span class="lbl">Покрытие</span>${surfMark(t)}</div>
-          ${["gs","finals","wfinals"].includes(t.cat)?`<div><span class="lbl">Очки победителю</span>${esc(CAT[t.cat].pts)}</div>`:""}
+          <div><span class="lbl">Dates</span>${esc(fmtDay(t.start))} – ${esc(fmtDay(t.end))}</div>
+          <div><span class="lbl">Venue</span>${esc(t.city)}, ${esc(t.country)}</div>
+          <div><span class="lbl">Surface</span>${surfMark(t)}</div>
+          ${["gs","finals","wfinals"].includes(t.cat)?`<div><span class="lbl">Winner gets</span>${esc(CAT[t.cat].pts)}</div>`:""}
         </div>
       </div>`;
-    if (t.champ) head += `<div class="champ"><span class="lbl">${t.tour==="wta"?"Победительница":"Победитель"}</span><b>${esc(t.champ)}</b>${t.runner?`<span>в финале — ${esc(t.runner)}, ${esc(t.score)}</span>`:""}</div>`;
+    if (t.champ) head += `<div class="champ"><span class="lbl">Champion</span><b>${esc(t.champ)}</b>${t.runner?`<span>d. ${esc(t.runner)} ${esc(t.score)} in the final</span>`:""}</div>`;
     if (t.note) head += `<div class="note">${esc(t.note)}</div>`;
 
     if (!dr){
-      const msg = st==="done" ? "Подробной сетки этого турнира в базе нет — только итог." : "Сетка и расписание появятся здесь после жеребьевки.";
+      const msg = st==="done" ? "There is no detailed draw for this tournament, only the result." : "The draw and schedule will appear here after the draw is made.";
       return head + `<div class="state">${msg}</div>`;
     }
 
@@ -504,11 +531,11 @@ footer{color:var(--muted);font-size:12px}
     if (dr.type==="list"){
       body = `<div class="listr">${dr.rounds.map(r=>`
         <div class="lr"><h3>${esc(r.name)}</h3>${r.matches.map(m=>`
-          <div class="lrow"><div><div class="players"><span class="${m.w===1?"w":""}" style="${m.w===1?"font-weight:600":""}">${esc(plain(m.a))}</span> <span class="hint">—</span> <span style="${m.w===2?"font-weight:600":""}">${esc(plain(m.b))}</span></div><div class="hint">${esc(m.sc||"")}</div></div><span class="pt">+${esc(m.pts)} ${m.pts==1?"очко":"очка"}</span><span class="run">${esc(m.run||"")}</span></div>`).join("")}</div>`).join("")}</div>`;
+          <div class="lrow"><div><div class="players"><span class="${m.w===1?"w":""}" style="${m.w===1?"font-weight:600":""}">${esc(plain(m.a))}</span> <span class="hint">—</span> <span style="${m.w===2?"font-weight:600":""}">${esc(plain(m.b))}</span></div><div class="hint">${esc(m.sc||"")}</div></div><span class="pt">+${esc(m.pts)} ${m.pts==1?"point":"points"}</span><span class="run">${esc(m.run||"")}</span></div>`).join("")}</div>`).join("")}</div>`;
     } else {
       tabs = `<div class="tabs" role="tablist">
-        <button role="tab" type="button" data-tab="bracket" aria-selected="${tab==="bracket"}">Сетка</button>
-        <button role="tab" type="button" data-tab="days" aria-selected="${tab==="days"}">Матчи по дням</button></div>`;
+        <button role="tab" type="button" data-tab="bracket" aria-selected="${tab==="bracket"}">Draw</button>
+        <button role="tab" type="button" data-tab="days" aria-selected="${tab==="days"}">Order of play</button></div>`;
       if (tab==="bracket"){
         body = bracketView(id, dr);
       } else {
@@ -518,8 +545,8 @@ footer{color:var(--muted);font-size:12px}
         const keys = Object.keys(byDay).sort();
         body = keys.length ? `<div class="days">${keys.map(d=>`<div class="day"><h3><b>${esc(fmtDayLong(d))}</b></h3>${
           byDay[d].sort((x,y)=>(x.m.t||"9").localeCompare(y.m.t||"9")).map(({r,m})=>schedRow(t,r,m,false)).join("")}</div>`).join("")}</div>`
-          : `<div class="state">Расписание еще не опубликовано.</div>`;
-        body += `<p class="hint">Время — ваше местное${TZ?" ("+esc(TZ)+")":""}.</p>`;
+          : `<div class="state">The schedule has not been published yet.</div>`;
+        body += `<p class="hint">Times are in your local time${TZ?" ("+esc(TZ)+")":""}.</p>`;
       }
     }
     return head + `<section class="sec">${tabs}${body}</section>`;
@@ -539,37 +566,38 @@ footer{color:var(--muted);font-size:12px}
   }
   function viewPickTour(){
     const card = tour => { const rk = state.rankings[tour]; const top = rk ? rk.list.slice(0,3) : [];
-      return `<button class="pick" type="button" data-pick-tour="${tour}"><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span><span class="pick-sub">${tour==="wta"?"женский тур":"мужской тур"}</span>${top.length?`<ol>${top.map(x=>`<li>${esc(x.n)}</li>`).join("")}</ol>`:""}<span class="pick-go">Открыть рейтинг</span></button>`; };
-    return `<section class="sec"><div class="sec-head"><h1>Рейтинг</h1></div><p class="hint">Выберите тур, чтобы открыть его рейтинг.</p><div class="pick-grid">${card("atp")}${card("wta")}</div></section>`;
+      return `<button class="pick" type="button" data-pick-tour="${tour}"><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span><span class="pick-sub">${tour==="wta"?"Women’s tour":"Men’s tour"}</span>${top.length?`<ol>${top.map(x=>`<li>${esc(x.n)}</li>`).join("")}</ol>`:""}<span class="pick-go">Open rankings</span></button>`; };
+    return `<section class="sec"><div class="sec-head"><h1>Rankings</h1></div><p class="hint">Choose a tour to open its rankings.</p><div class="pick-grid">${card("atp")}${card("wta")}</div></section>`;
   }
   function viewRank(){
     if (state.tour==="all") return viewPickTour();
     const tours = [state.tour];
     const playing = playingNow();
-    const move = x => x.new ? `<span class="mv new" title="Новичок в топ-100">new</span>`
-      : x.d > 0 ? `<span class="mv up" title="Выше официального рейтинга на ${x.d}">▲${x.d}</span>`
-      : x.d < 0 ? `<span class="mv down" title="Ниже официального рейтинга на ${-x.d}">▼${-x.d}</span>` : `<span class="mv"></span>`;
-    const dpts = x => x.dp ? `<small class="dp ${x.dp>0?"up":"down"}">${x.dp>0?"+":"−"}${Math.abs(x.dp).toLocaleString("ru-RU")}</small>` : "";
+    const move = x => x.new ? `<span class="mv new" title="New in the top 100">new</span>`
+      : x.d > 0 ? `<span class="mv up" title="${x.d} above the official ranking">▲${x.d}</span>`
+      : x.d < 0 ? `<span class="mv down" title="${-x.d} below the official ranking">▼${-x.d}</span>` : `<span class="mv"></span>`;
+    const dpts = x => x.dp ? `<small class="dp ${x.dp>0?"up":"down"}">${x.dp>0?"+":"−"}${Math.abs(x.dp).toLocaleString(LOC)}</small>` : "";
     const cols = tours.map(tour=>{
       const rk = state.rankings[tour];
-      if (!rk) return `<div class="state">Рейтинг ${tour.toUpperCase()} еще не загружен.</div>`;
-      const upd = rk.updatedAt ? new Date(rk.updatedAt).toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
+      if (!rk) return `<div class="state">${tour.toUpperCase()} rankings have not loaded yet.</div>`;
+      const upd = rk.updatedAt ? new Date(rk.updatedAt).toLocaleString(LOC,{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
       const live = rk.kind==="live";
       return `<section class="rank-col">
-        <div class="rank-head"><h2><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span> ${live?"лайв-рейтинг":"одиночный разряд"}</h2><span class="hint">${live?`обновлен ${esc(upd)}`:`по данным на ${esc(fmtDay(rk.date))}`}</span></div>
-        <table class="rank"><thead><tr><th>Место</th><th></th><th>${tour==="wta"?"Теннисистка":"Теннисист"}</th><th>Очки</th></tr></thead><tbody>${
-          rk.list.map(x=>{ const t = playing[rkey(x.n)]; return `<tr class="prow" data-q="${esc(rkey(x.n))}" data-tour="${tour}"><td class="pos">${x.r}</td><td class="mvc">${live?move(x):""}</td><td><button class="pname" type="button" aria-expanded="false" data-player="${esc(x.n)}">${esc(x.n)}</button>${t?`<a class="playing" href="#t-${esc(t.id)}">играет: ${esc(t.city.split(" (")[0])}</a>`:""}</td><td class="pt">${x.p.toLocaleString("ru-RU")}${live?dpts(x):""}</td></tr><tr class="pdetail" hidden><td colspan="4"></td></tr>`; }).join("")
-        }</tbody></table></section>`;
+        <div class="rank-head"><h2><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span> ${live?"live rankings":"singles rankings"}</h2><span class="hint">${live?`updated ${esc(upd)}`:`as of ${esc(fmtDay(rk.date))}`}</span></div>
+        <table class="rank"><thead><tr><th>Rank</th><th></th><th>Player</th><th>Points</th></tr></thead><tbody>${
+          (state.onlyFav ? rk.list.filter(x=>isFav(x.n)) : rk.list).map(x=>{ const t = playing[rkey(x.n)]; return `<tr class="prow${isFav(x.n)?" fav":""}" data-pk="${esc(rkey(x.n))}" data-q="${esc(rkey(x.n))}" data-tour="${tour}"><td class="pos">${x.r}</td><td class="mvc">${live?move(x):""}</td><td>${starBtn(x.n)}<button class="pname" type="button" aria-expanded="false" data-player="${esc(x.n)}">${esc(x.n)}</button>${t?`<a class="playing" href="#t-${esc(t.id)}">playing: ${esc(t.city.split(" (")[0])}</a>`:""}</td><td class="pt">${x.p.toLocaleString(LOC)}${live?dpts(x):""}</td></tr><tr class="pdetail" hidden><td colspan="4"></td></tr>`; }).join("")
+        }</tbody></table>${state.onlyFav && !rk.list.some(x=>isFav(x.n)) ? `<div class="state">None of your players are in the ${tour.toUpperCase()} top 100 yet. Tap ☆ next to a name to add one.</div>` : ""}</section>`;
     }).join("");
     const anyLive = tours.some(t=>state.rankings[t] && state.rankings[t].kind==="live");
     const off = tours.map(t=>state.rankings[t]).find(r=>r && r.officialDate);
     return `<section class="sec">
-        <div class="sec-head"><h1>Рейтинг</h1><label class="rank-search"><span class="hint">Найти игрока</span><input id="rank-q" type="search" placeholder="например, Medvedev" autocomplete="off"></label></div>
-        <div class="legend"><span class="hint">Цвет названия турнира:</span><span data-g="gs">Большой шлем</span><span data-g="1000">1000</span><span data-g="500">500</span><span data-g="250">250</span><span data-g="finals">Итоговые</span></div>
+        <div class="sec-head"><h1>Rankings</h1><label class="rank-search"><span class="hint">Find a player</span><input id="rank-q" type="search" placeholder="e.g. Medvedev" autocomplete="off"></label></div>
+        <div class="legend"><span class="hint">Tournament colours:</span><span data-g="gs">Grand Slam</span><span data-g="1000">1000</span><span data-g="500">500</span><span data-g="250">250</span><span data-g="finals">Finals</span></div>
+        <div class="chips"><button class="chip" type="button" data-onlyfav aria-pressed="${!!state.onlyFav}">★ My players only</button></div>
       </section>
       <div class="rank-grid ${tours.length>1?"two":""}">${cols}</div>`;
   }
-  const ROUND_LABEL = {"1/64":"1/64 финала","1/32":"1/32 финала","1/16":"1/16 финала","1/8":"1/8 финала","1/4":"1/4 финала","1/2":"1/2 финала","Финал":"Финал"};
+  const ROUND_LABEL = {"R128":"R128","R64":"R64","R32":"R32","R16":"R16","QF":"QF","SF":"SF","Final":"Final"};
   // How far a player went in one tournament: from its draw when the app has one, otherwise from the calendar
   function resultIn(t, k){
     const dr = state.draws[t.id];
@@ -584,31 +612,31 @@ footer{color:var(--muted);font-size:12px}
       }));
       if (last){
         const final = last.ri===dr.rounds.length-1;
-        if (last.m.w===last.side && final) return {code:"W", label:"Титул", rank:7};
+        if (last.m.w===last.side && final) return {code:"W", label:"Title", rank:7};
         if (last.m.w && last.m.w!==last.side) return {code:"L", label:ROUND_LABEL[last.r.name]||last.r.name, rank:final?6:(dr.rounds.length-1-last.ri<=1?5:dr.rounds.length-1-last.ri<=2?4:2)};
-        return {code:"P", label:`играет, ${ROUND_LABEL[last.r.name]||last.r.name}`, rank:1};
+        return {code:"P", label:`playing, ${ROUND_LABEL[last.r.name]||last.r.name}`, rank:1};
       }
     }
-    if (t.champ && rkey(t.champ)===k) return {code:"W", label:"Титул", rank:7};
-    if (t.runner && rkey(t.runner)===k) return {code:"F", label:"Финал", rank:6};
-    if ((t.sf||[]).some(n=>rkey(n)===k)) return {code:"SF", label:"1/2 финала", rank:5};
-    if ((t.qf||[]).some(n=>rkey(n)===k)) return {code:"QF", label:"1/4 финала", rank:4};
+    if (t.champ && rkey(t.champ)===k) return {code:"W", label:"Title", rank:7};
+    if (t.runner && rkey(t.runner)===k) return {code:"F", label:"Final", rank:6};
+    if ((t.sf||[]).some(n=>rkey(n)===k)) return {code:"SF", label:"SF", rank:5};
+    if ((t.qf||[]).some(n=>rkey(n)===k)) return {code:"QF", label:"QF", rank:4};
     return null;
   }
   function playerCard(name, tour){
     const k = rkey(name);
     const ts = (state.season ? state.season.tournaments : []).filter(t=>t.tour===tour && !["davis","laver","team","bjk"].includes(t.cat));
     const rows = ts.map(t=>({t, res:resultIn(t,k)})).filter(x=>x.res);
-    const n = c => rows.filter(x=>x.res.code===c || (c==="F" && x.res.code==="L" && x.res.label==="Финал")).length;
-    const titles = n("W"), finals = n("F"), semis = rows.filter(x=>x.res.label==="1/2 финала").length;
-    const short = t => t.cat==="gs" ? "Большой шлем" : catLabel(t);
-    const tip = (t,res) => res.code==="W" && t.runner ? `В финале ${t.runner}, ${t.score||""}` : res.code==="F" && t.champ ? `${tour==="wta"?"Проиграла":"Проиграл"} ${t.champ}, ${t.score||""}` : "";
+    const n = c => rows.filter(x=>x.res.code===c || (c==="F" && x.res.code==="L" && x.res.label==="Final")).length;
+    const titles = n("W"), finals = n("F"), semis = rows.filter(x=>x.res.label==="SF").length;
+    const short = t => t.cat==="gs" ? "Grand Slam" : catLabel(t);
+    const tip = (t,res) => res.code==="W" && t.runner ? `d. ${t.runner} ${t.score||""}` : res.code==="F" && t.champ ? `lost to ${t.champ} ${t.score||""}` : "";
     const list = rows.length ? `<ul class="pd-list">${rows.map(({t,res})=>`<li class="r-${res.code}" title="${esc([short(t), tip(t,res)].filter(Boolean).join(". "))}"><span class="pd-date">${fmtRange(t.start,t.end)}</span><a class="pd-name" data-g="${esc(GROUP[t.cat]||"")}" href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="pd-res">${esc(res.label)}</span></li>`).join("")}</ul>`
-      : `<p class="hint">В сезоне 2026 результатов от 1/4 финала на турнирах тура пока нет.</p>`;
+      : `<p class="hint">No tour-level quarterfinals or better in 2026 yet.</p>`;
     return `<div class="pd">
-      <div class="pd-sum"><span><b>${titles}</b> ${titles===1?"титул":titles>=2&&titles<=4?"титула":"титулов"}</span><span><b>${finals}</b> ${finals===1?"финал":finals>=2&&finals<=4?"финала":"финалов"} без победы</span><span><b>${semis}</b> в 1/2 финала</span></div>
+      <div class="pd-sum"><span><b>${titles}</b> ${titles===1?"title":"titles"}</span><span><b>${finals}</b> ${finals===1?"lost final":"lost finals"}</span><span><b>${semis}</b> ${semis===1?"semifinal":"semifinals"}</span></div>
       ${list}
-      <p class="hint">Турниры основного тура сезона 2026. Для турниров с сеткой в приложении видны все круги, для остальных результаты начиная с 1/4 финала.</p></div>`;
+      <p class="hint">Tour-level events in 2026. Every round is shown for tournaments with a draw in the app; for the rest, results start at the quarterfinals.</p></div>`;
   }
   app.addEventListener("click", e=>{
     const pt = e.target.closest("[data-pick-tour]");
@@ -629,6 +657,59 @@ footer{color:var(--muted);font-size:12px}
       if (det && det.classList.contains("pdetail") && tr.hidden){ det.hidden = true; const b = tr.querySelector(".pname"); if (b) b.setAttribute("aria-expanded","false"); }
     });
   });
+
+  function toggleFav(n){
+    const k = rkey(n);
+    if (FAV[k]) delete FAV[k]; else FAV[k] = n;
+    try{ localStorage.setItem("tablo-favs", JSON.stringify(FAV)); }catch(e){}
+    const on = !!FAV[k], lbl = (on?"Remove from":"Add to")+" my players";
+    document.querySelectorAll(".star").forEach(b=>{ if (b.dataset.k!==k) return; b.setAttribute("aria-pressed", String(on)); b.textContent = on?"★":"☆"; b.title = lbl; b.setAttribute("aria-label", lbl); });
+    document.querySelectorAll("[data-pk]").forEach(el=>{ if (el.dataset.pk===k) el.classList.toggle("fav", on); });
+    const h = (location.hash||"").replace(/^#/,"");
+    if (h==="" || h==="now" || (h==="rank" && state.onlyFav)) keepScroll();
+  }
+  document.addEventListener("click", e=>{
+    const b = e.target.closest(".star"); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); toggleFav(b.dataset.fav);
+  }, true);
+  app.addEventListener("click", e=>{
+    const f = e.target.closest("[data-onlyfav]"); if (!f) return;
+    state.onlyFav = !state.onlyFav; keepScroll();
+  });
+  // Next or current match for a followed player, across tournaments that are on or coming up
+  function nextFor(k){
+    let best = null;
+    for (const [id,dr] of Object.entries(state.draws)){
+      const t = byId(id); if (!t || tStatus(t)==="done" || dr.type!=="knockout") continue;
+      for (const r of (dr.rounds||[]).concat(dr.extra||[])) for (const m of (r.matches||[])){
+        if (m.w) continue;
+        const side = m.a && m.a.n && rkey(m.a.n)===k ? 1 : (m.b && m.b.n && rkey(m.b.n)===k ? 2 : 0);
+        if (!side) continue;
+        const opp = side===1 ? m.b : m.a; if (opp && opp.bye) continue;
+        const when = m.t || (m.d ? m.d+"T23:59:00Z" : t.start+"T23:59:00Z");
+        if (!best || when < best.when) best = {t, r, m, opp, when};
+      }
+    }
+    return best;
+  }
+  function viewMine(){
+    const keys = Object.keys(FAV);
+    if (!keys.length) return `<section class="sec"><div class="sec-head"><h2>My players</h2></div><div class="state">Tap ☆ next to a player in Rankings, a draw or the order of play to follow them here.</div></section>`;
+    const today = todayISO();
+    const rows = keys.map(k=>{
+      const name = FAV[k], rk = RANK[k], nx = nextFor(k);
+      let info = `<span class="hint">No match scheduled</span>`, sortKey = "9";
+      if (nx){
+        const day = dayOfMatch(nx.m);
+        const when = nx.m.st==="live" ? `<span class="pill live">Live</span>` : nx.m.t ? `${day===today?"Today":esc(fmtShort(day))}, ${nx.m.nb?"not before ":""}${fmtTime(nx.m.t)}` : day ? `${esc(fmtShort(day))}, time TBC` : "Date TBC";
+        const opp = nx.opp && nx.opp.tbd ? "opponent TBD" : `vs ${esc(plain(nx.opp))}`;
+        info = `<a href="#t-${esc(nx.t.id)}" data-g="${esc(GROUP[nx.t.cat]||"")}">${esc(nx.t.name)}</a><span>${esc(nx.r.name)}</span><span>${when}</span><span class="hint">${opp}</span>`;
+        sortKey = nx.m.st==="live" ? "0" : nx.when;
+      }
+      return {sortKey, html:`<div class="mine-row" data-pk="${esc(k)}">${starBtn(name)}<b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
+    }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey));
+    return `<section class="sec"><div class="sec-head"><h2>My players</h2><span class="hint">Saved on this device</span></div><div class="mine">${rows.map(r=>r.html).join("")}</div></section>`;
+  }
 
   // ---------- bracket: collapsing & sections ----------
   const isPlayed = m => !!m.w || !!(m.a && m.a.bye) || !!(m.b && m.b.bye);
@@ -661,22 +742,22 @@ footer{color:var(--muted);font-size:12px}
     const autoN = Object.keys(auto.set).length;
     let tools = "";
     if (parts){
-      const name = parts===4 ? ["Верхняя четверть","Вторая четверть","Третья четверть","Нижняя четверть"] : ["Верхняя половина","Нижняя половина"];
-      tools += `<div class="chips" role="group" aria-label="Часть сетки"><button class="chip" type="button" data-sec="0" aria-pressed="${sec===0}">Вся сетка</button>${
-        name.map((nm,k)=>{ const lb=sectionLabel(first,k+1,parts); return `<button class="chip" type="button" data-sec="${k+1}" aria-pressed="${sec===k+1}" title="${esc(nm)}">${parts===4?(k+1)+"/4":(k?"Низ":"Верх")}${lb?`<span class="chip-sub">${esc(lb)}</span>`:""}</button>`; }).join("")}</div>`;
+      const name = parts===4 ? ["Top quarter","Second quarter","Third quarter","Bottom quarter"] : ["Top half","Bottom half"];
+      tools += `<div class="chips" role="group" aria-label="Part of the draw"><button class="chip" type="button" data-sec="0" aria-pressed="${sec===0}">Full draw</button>${
+        name.map((nm,k)=>{ const lb=sectionLabel(first,k+1,parts); return `<button class="chip" type="button" data-sec="${k+1}" aria-pressed="${sec===k+1}" title="${esc(nm)}">${parts===4?"Q"+(k+1):(k?"Bottom":"Top")}${lb?`<span class="chip-sub">${esc(lb)}</span>`:""}</button>`; }).join("")}</div>`;
     }
-    tools += anyC ? `<button class="linkbtn" type="button" data-brk="open">Развернуть все круги</button>`
-                  : (autoN ? `<button class="linkbtn" type="button" data-brk="auto">Свернуть сыгранные круги</button>` : "");
+    tools += anyC ? `<button class="linkbtn" type="button" data-brk="open">Expand all rounds</button>`
+                  : (autoN ? `<button class="linkbtn" type="button" data-brk="auto">Collapse finished rounds</button>` : "");
     const cols = dr.rounds.map((r,i)=>{
       const ms = sectionSlice(r.matches||[], sec, parts);
       if (isC(i)){
         const played = ms.filter(m=>m.w).length;
-        return `<button class="bcol-c" type="button" data-col="${i}" aria-expanded="false" title="Развернуть ${esc(r.name)}"><span class="plus">+</span><span class="v"><b>${esc(r.name)}</b><small>${played ? played+" сыграно" : ms.length+" матчей"}</small></span></button>`;
+        return `<button class="bcol-c" type="button" data-col="${i}" aria-expanded="false" title="Expand ${esc(r.name)}"><span class="plus">+</span><span class="v"><b>${esc(r.name)}</b><small>${played ? played+" played" : ms.length+" matches"}</small></span></button>`;
       }
       const now = i===auto.current && !roundDone(r) ? 1 : 0;
-      return `<div class="bcol"><button class="colhead" type="button" data-col="${i}" aria-expanded="true" data-now="${now}"><b>${esc(r.name)}${now?`<em class="nowtag">сейчас</em>`:""}</b><span>свернуть −</span></button><div class="stack">${ms.map(matchCard).join("")}</div></div>`;
+      return `<div class="bcol"><button class="colhead" type="button" data-col="${i}" aria-expanded="true" data-now="${now}"><b>${esc(r.name)}${now?`<em class="nowtag">now</em>`:""}</b><span>collapse −</span></button><div class="stack">${ms.map(matchCard).join("")}</div></div>`;
     }).join("");
-    const hint = autoN && !(Object.keys(manual).length) ? `<p class="hint">Сыгранные круги свернуты, чтобы были видны те, кто еще в турнире. Нажмите на свернутый круг, чтобы открыть его.</p>` : "";
+    const hint = autoN && !(Object.keys(manual).length) ? `<p class="hint">Finished rounds are collapsed so you can see who is still in the draw. Tap a collapsed round to open it.</p>` : "";
     return `${tools?`<div class="btools">${tools}</div>`:""}${hint}<div class="bracket-frame"><div class="bracket">${cols}</div></div>${dr.note?"":""}`;
   }
 
@@ -727,9 +808,9 @@ footer{color:var(--muted);font-size:12px}
   function setStamp(meta){
     if (!state.season) return;
     const u = state.season.updatedAt ? new Date(state.season.updatedAt) : null;
-    const parts = [u ? "Данные обновлены " + u.toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Данные загружены"];
-    if (meta && meta.stale) parts.push("Связь с базой пока не подтверждена");
-    if (TZ) parts.push("Время " + TZ);
+    const parts = [u ? "Updated " + u.toLocaleString(LOC,{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "Data loaded"];
+    if (meta && meta.stale) parts.push("Connection not confirmed yet");
+    if (TZ) parts.push("Times in " + TZ);
     stamp.innerHTML = parts.map(x=>`<span>${esc(x)}</span>`).join("");
   }
 
@@ -746,8 +827,8 @@ footer{color:var(--muted);font-size:12px}
       state.err = null; rebuild(); setStamp();
       const y = window.scrollY; route(); window.scrollTo(0, y);
     }catch(e){
-      if (!state.season){ state.err = "Не получилось загрузить данные. Проверьте интернет и откройте приложение еще раз."; route(); stamp.textContent = "Нет связи"; }
-      else stamp.insertAdjacentHTML("beforeend", "<span>Нет связи, показаны сохраненные данные</span>");
+      if (!state.season){ state.err = "Could not load the data. Check your connection and open the app again."; route(); stamp.textContent = "Offline"; }
+      else stamp.insertAdjacentHTML("beforeend", "<span>Offline, showing saved data</span>");
     }
   }
   load();

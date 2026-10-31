@@ -1,8 +1,8 @@
-"""Собирает data/tablo.json из документов, выгруженных из базы страницы Claude.
+"""Rebuilds data/tablo.json from documents exported from the Claude page database.
 
-Запуск: python3 tools/build_bundle.py <папка_выгрузки>
-В папке ожидаются season/2026.json, season/2026-wta.json, draws/*.json и rankings/*.json
-(так их сохраняет ArtifactData с out_dir).
+Usage: python3 tools/build_bundle.py <export_folder>
+The folder must contain season/2026.json, season/2026-wta.json, draws/*.json and rankings/*.json
+(the layout ArtifactData uses with out_dir).
 """
 import json, os, sys
 
@@ -18,7 +18,7 @@ for f in sorted(os.listdir(ddir)):
     if f.endswith(".json"):
         draws[f[:-5]] = json.load(open(os.path.join(ddir, f)))
 for tour, s in seasons.items():
-    assert len(s.get("tournaments", [])) > 40, f"в календаре {tour} подозрительно мало турниров"
+    assert len(s.get("tournaments", [])) > 40, f"the {tour} calendar has suspiciously few tournaments"
 rankings = {}
 rdir = os.path.join(src, "rankings")
 if os.path.isdir(rdir):
@@ -28,4 +28,4 @@ if os.path.isdir(rdir):
 updated = max(s.get("updatedAt", "") for s in seasons.values())
 out = os.path.join(root, "data", "tablo.json")
 json.dump({"updatedAt": updated, "seasons": seasons, "draws": draws, "rankings": rankings}, open(out, "w"), ensure_ascii=False, separators=(",", ":"))
-print("ok:", out, "| сеток:", len(draws), "| обновлено:", updated)
+print("ok:", out, "| draws:", len(draws), "| updated:", updated)
