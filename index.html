@@ -30,6 +30,7 @@ img{max-width:100%}
   --accent:#1f5fa8; --accent-ink:#ffffff; --live:#c8432a; --done:#3f7d4c;
   --hard:#2f6db3; --hard-i:#5b5aa6; --clay:#c2653a; --grass:#3f8a4a; --mixed:#7a8796;
   --board:#13283f; --board-ink:#f2f5f8; --board-muted:#a9b8c8; --atp:#2f6db3; --wta:#a2417a;
+  --c-gs:#9a6400; --c-1000:#1f5fa8; --c-500:#7a3fb0; --c-250:#0d7672; --c-fin:#b8336a;
   --f-display:"Fira Sans Extra Condensed","Arial Narrow","Roboto Condensed",sans-serif;
   --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:10px;
@@ -38,12 +39,12 @@ img{max-width:100%}
   --bg:#0e141b; --surface:#16202b; --sunk:#111922; --ink:#e6ebf1; --muted:#97a5b5; --line:#283544;
   --accent:#6ea6ea; --accent-ink:#0b1622; --live:#ff7b5e; --done:#7cc48a;
   --hard:#6d9fe0; --hard-i:#9a98e6; --clay:#e08a5f; --grass:#77bd7f; --mixed:#9aa7b6;
-  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; color-scheme:dark}}
+  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; --c-gs:#e7b54f; --c-1000:#79aef0; --c-500:#c09cf2; --c-250:#5cc8c2; --c-fin:#f28cb4; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e141b; --surface:#16202b; --sunk:#111922; --ink:#e6ebf1; --muted:#97a5b5; --line:#283544;
   --accent:#6ea6ea; --accent-ink:#0b1622; --live:#ff7b5e; --done:#7cc48a;
   --hard:#6d9fe0; --hard-i:#9a98e6; --clay:#e08a5f; --grass:#77bd7f; --mixed:#9aa7b6;
-  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; color-scheme:dark}
+  --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; --c-gs:#e7b54f; --c-1000:#79aef0; --c-500:#c09cf2; --c-250:#5cc8c2; --c-fin:#f28cb4; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
@@ -91,10 +92,18 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pd h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:baseline}
 .pd h4 b{font-size:20px;color:var(--ink)}
 .pd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.pd-list li{display:grid;grid-template-columns:6.6em minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.pd-list li{display:grid;grid-template-columns:6.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
 .pd-list li:last-child{border-bottom:0}
 .pd-name{font-weight:600;text-decoration:none;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.pd-name:hover{color:var(--accent)}
+.pd-name:hover{text-decoration:underline;text-underline-offset:3px}
+[data-g="gs"]{color:var(--c-gs)!important}
+[data-g="1000"]{color:var(--c-1000)!important}
+[data-g="500"]{color:var(--c-500)!important}
+[data-g="250"]{color:var(--c-250)!important}
+[data-g="finals"]{color:var(--c-fin)!important}
+.legend{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;font-size:14px}
+.legend span{font-weight:600}
+.legend .hint{font-weight:400}
 .pd-date{font-family:var(--f-display);font-weight:600;color:var(--muted)}
 .pd-res{font-size:12px;font-weight:600;color:var(--muted)}
 .pd-list li.r-W .pd-res{color:var(--done)}
@@ -102,7 +111,7 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pd-list .cat{font-size:11px;padding:1px 6px}
 .pd-sum{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted)}
 .pd-sum b{font-family:var(--f-display);font-size:20px;color:var(--ink);margin-right:2px}
-@media (max-width:520px){.pd-list li{grid-template-columns:6.2em minmax(0,1fr) auto;gap:8px}.pd-list li .cat{display:none}.pd-date{font-size:13px}}
+@media (max-width:520px){.pd-list li{grid-template-columns:6.2em minmax(0,1fr) auto;gap:8px}.pd-date{font-size:13px}}
 .playing{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--live);color:var(--bg);text-decoration:none;white-space:nowrap}
 .rank-search{display:flex;flex-direction:column;gap:4px}
 .rank-search input{font:inherit;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);min-width:0;width:240px;max-width:100%}
@@ -542,7 +551,7 @@ footer{color:var(--muted);font-size:12px}
     const off = tours.map(t=>state.rankings[t]).find(r=>r && r.officialDate);
     return `<section class="sec">
         <div class="sec-head"><h1>Рейтинг</h1><label class="rank-search"><span class="hint">Найти игрока</span><input id="rank-q" type="search" placeholder="например, Medvedev" autocomplete="off"></label></div>
-        <p class="hint">${anyLive?`Лайв-рейтинг уже учитывает очки турниров, которые идут сейчас. Стрелка и число у очков показывают разницу с официальным рейтингом${off?` от ${esc(fmtDay(off.officialDate))}`:""}. `:""}Нажмите на имя, чтобы увидеть титулы игрока в этом сезоне.</p>
+        <div class="legend"><span class="hint">Цвет названия турнира:</span><span data-g="gs">Большой шлем</span><span data-g="1000">1000</span><span data-g="500">500</span><span data-g="250">250</span><span data-g="finals">Итоговые</span></div>
       </section>
       <div class="rank-grid ${tours.length>1?"two":""}">${cols}</div>`;
   }
@@ -580,7 +589,7 @@ footer{color:var(--muted);font-size:12px}
     const titles = n("W"), finals = n("F"), semis = rows.filter(x=>x.res.label==="1/2 финала").length;
     const short = t => t.cat==="gs" ? "Большой шлем" : catLabel(t);
     const tip = (t,res) => res.code==="W" && t.runner ? `В финале ${t.runner}, ${t.score||""}` : res.code==="F" && t.champ ? `${tour==="wta"?"Проиграла":"Проиграл"} ${t.champ}, ${t.score||""}` : "";
-    const list = rows.length ? `<ul class="pd-list">${rows.map(({t,res})=>`<li class="r-${res.code}" title="${esc(tip(t,res))}"><span class="pd-date">${fmtRange(t.start,t.end)}</span><a class="pd-name" href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="pd-res">${esc(res.label)}</span><span class="cat" data-c="${esc(t.cat)}">${esc(short(t))}</span></li>`).join("")}</ul>`
+    const list = rows.length ? `<ul class="pd-list">${rows.map(({t,res})=>`<li class="r-${res.code}" title="${esc([short(t), tip(t,res)].filter(Boolean).join(". "))}"><span class="pd-date">${fmtRange(t.start,t.end)}</span><a class="pd-name" data-g="${esc(GROUP[t.cat]||"")}" href="#t-${esc(t.id)}">${esc(t.name)}</a><span class="pd-res">${esc(res.label)}</span></li>`).join("")}</ul>`
       : `<p class="hint">В сезоне 2026 результатов от 1/4 финала на турнирах тура пока нет.</p>`;
     return `<div class="pd">
       <div class="pd-sum"><span><b>${titles}</b> ${titles===1?"титул":titles>=2&&titles<=4?"титула":"титулов"}</span><span><b>${finals}</b> ${finals===1?"финал":finals>=2&&finals<=4?"финала":"финалов"} без победы</span><span><b>${semis}</b> в 1/2 финала</span></div>
