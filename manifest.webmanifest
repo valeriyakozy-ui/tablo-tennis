@@ -5,8 +5,8 @@
   "start_url": "./#now",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#13283f",
-  "theme_color": "#13283f",
+  "background_color": "#f7f7fb",
+  "theme_color": "#ffffff",
   "description": "ATP and WTA calendar, draws, order of play and live rankings",
   "icons": [
     {

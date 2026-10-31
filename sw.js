@@ -1,4 +1,4 @@
-const SHELL = "tablo-shell-v3";
+const SHELL = "tablo-shell-v4";
 const DATA = "tablo-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES)).then(() => self.skipWaiting())); });
