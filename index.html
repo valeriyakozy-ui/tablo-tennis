@@ -35,6 +35,7 @@ img{max-width:100%}
   --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:10px;
 }
+/* Tour themes: ATP follows the broadcast stats board (electric blue, deep navy, lime), WTA the WTA match centre (deep violet, purple, teal). Both are dark looks by design. */
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0e141b; --surface:#16202b; --sunk:#111922; --ink:#e6ebf1; --muted:#97a5b5; --line:#283544;
   --accent:#6ea6ea; --accent-ink:#0b1622; --live:#ff7b5e; --done:#7cc48a;
@@ -46,6 +47,26 @@ img{max-width:100%}
   --hard:#6d9fe0; --hard-i:#9a98e6; --clay:#e08a5f; --grass:#77bd7f; --mixed:#9aa7b6;
   --board:#0a1622; --board-ink:#eef2f6; --board-muted:#8fa2b6; --atp:#6ea6ea; --wta:#e58bbf; --c-gs:#e7b54f; --c-1000:#79aef0; --c-500:#c09cf2; --c-250:#5cc8c2; --c-fin:#f28cb4; color-scheme:dark}
 
+:root[data-tt="atp"]{
+  --bg:#0a0f2e; --surface:#111a4d; --sunk:#0d1540; --ink:#f3f5ff; --muted:#a3abdb; --line:#28328a;
+  --accent:#d6f53b; --accent-ink:#0a0f2e; --live:#ff5c4f; --done:#d6f53b;
+  --hard:#7aa8ff; --hard-i:#a7a4ff; --clay:#ff9a64; --grass:#7fdc8a; --mixed:#a3abdb;
+  --board:#2a30d0; --board-grad:linear-gradient(100deg,#3a40e6 0%,#2329b8 55%,#171c8c 100%); --board-ink:#ffffff; --board-muted:#c9ccff;
+  --atp:#d6f53b; --wta:#f39ac9;
+  --c-gs:#ffd166; --c-1000:#8fc0ff; --c-500:#c7a6ff; --c-250:#6fe3d6; --c-fin:#ff8fbf;
+  color-scheme:dark}
+:root[data-tt="wta"]{
+  --bg:#130a29; --surface:#1d1140; --sunk:#180d36; --ink:#f4effd; --muted:#b0a2d3; --line:#36245f;
+  --accent:#8f5cf7; --accent-ink:#ffffff; --live:#ff6b8f; --done:#2fd3a3;
+  --hard:#8fb4ff; --hard-i:#b9a6ff; --clay:#ff9f73; --grass:#6fdc9a; --mixed:#b0a2d3;
+  --board:#1f0f47; --board-grad:linear-gradient(100deg,#2b1660 0%,#1f0f47 60%,#160a36 100%); --board-ink:#ffffff; --board-muted:#bfaeea;
+  --atp:#8fc0ff; --wta:#2fd3a3;
+  --c-gs:#ffd166; --c-1000:#8fc0ff; --c-500:#c7a6ff; --c-250:#4fe0c0; --c-fin:#ff8fbf;
+  color-scheme:dark}
+:root[data-tt="atp"] .tours button[data-tour="atp"][aria-pressed="true"]{color:#0a0f2e}
+:root[data-tt="wta"] .tours button[data-tour="wta"][aria-pressed="true"]{color:#130a29}
+:root[data-tt="wta"] .cat[data-c="w1000"],:root[data-tt="wta"] .cat[data-c="wfinals"]{background:linear-gradient(90deg,#2fd3a3,#8f5cf7);border-color:transparent;color:#fff}
+:root[data-tt="atp"] .mt .p.win::after{box-shadow:0 0 6px var(--done)}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--board)}
@@ -53,7 +74,7 @@ a{color:inherit}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 
-.board{background:var(--board);color:var(--board-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.board{background:var(--board-grad,var(--board));color:var(--board-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .board .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:12px}
 .brand{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.02em;text-transform:uppercase;line-height:1;display:flex;align-items:baseline;gap:10px}
@@ -126,7 +147,7 @@ tr.prow.fav td{background:color-mix(in srgb,var(--c-gs) 9%,transparent)}
 .mine{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .mine-row{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);align-items:baseline;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--line)}
 .mine-row:last-child{border-bottom:0}
-.mine-row .star{margin:0}
+.star-static{color:var(--c-gs);font-size:15px;line-height:1}
 .mine-name{white-space:nowrap}
 .mine-info{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:14px;justify-content:flex-end;min-width:0}
 .mine-info a{font-weight:600;text-decoration:none}
@@ -400,7 +421,7 @@ footer{color:var(--muted);font-size:12px}
     if(p.bye) return `<span class="nm">bye</span>`;
     if(p.tbd) return `<span class="nm">TBD</span>`;
     const rk = rankOf(p);
-    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"")+(rk?`<span class="rk" title="Ranking">#${rk.r}</span>`:"")+(favable(p)?starBtn(p.n):"");
+    return (p.s?`<span class="sd">${esc(p.s)}</span>`:"")+`<span class="nm" title="${esc(p.n)}">${esc(p.n)}</span>`+(p.tag?`<span class="tag">${esc(p.tag)}</span>`:"")+(rk?`<span class="rk" title="Ranking">#${rk.r}</span>`:"");
   }
   const plain = p => !p ? "—" : p.bye ? "bye" : p.tbd ? "TBD" : p.n + (p.s?` [${p.s}]`:"") + (p.tag?` (${p.tag})`:"");
 
@@ -480,7 +501,7 @@ footer{color:var(--muted);font-size:12px}
     const a = m.a, b = m.b;
     const rkTag = p => { const rk = rankOf(p); return rk ? `<small class="rk" title="Ranking">#${rk.r}</small>` : ""; };
     const who = (p,i) => { const fk = favable(p) ? rkey(p.n) : "";
-      return `<span class="${m.w===i?"w":""}${fk && FAV[fk]?" fav":""}"${fk?` data-pk="${esc(fk)}"`:""}>${esc(plain(p))}${rkTag(p)}${fk?starBtn(p.n):""}</span>`; };
+      return `<span class="${m.w===i?"w":""}${fk && FAV[fk]?" fav":""}"${fk?` data-pk="${esc(fk)}"`:""}>${esc(plain(p))}${rkTag(p)}</span>`; };
     const players = `${who(a,1)}<span class="vs">—</span>${who(b,2)}`;
     const res = m.st==="live" ? `<span class="pill live">Live</span>` : (m.w && m.sc ? esc(m.sc) : "");
     const ctx = (withT?`<a href="#t-${esc(t.id)}">${esc(t.name)}</a>, `:"") + esc(r.name) + (m.court?`, ${esc(m.court)}`:"");
@@ -710,7 +731,7 @@ footer{color:var(--muted);font-size:12px}
   }
   function viewMine(){
     const keys = Object.keys(FAV);
-    if (!keys.length) return `<section class="sec"><div class="sec-head"><h2>My players</h2></div><div class="state">Tap ☆ next to a player in Rankings, a draw or the order of play to follow them here.</div></section>`;
+    if (!keys.length) return `<section class="sec"><div class="sec-head"><h2>My players</h2></div><div class="state">Follow players from <a href="#rank">Rankings</a>: tap ☆ next to a name and their matches will appear here.</div></section>`;
     const today = todayISO();
     const rows = keys.map(k=>{
       const name = FAV[k], rk = RANK[k], nx = nextFor(k);
@@ -722,7 +743,7 @@ footer{color:var(--muted);font-size:12px}
         info = `<a href="#t-${esc(nx.t.id)}" data-g="${esc(GROUP[nx.t.cat]||"")}">${esc(nx.t.name)}</a><span>${esc(nx.r.name)}</span><span>${when}</span><span class="hint">${opp}</span>`;
         sortKey = nx.m.st==="live" ? "0" : nx.when;
       }
-      return {sortKey, name, nx, html:`<div class="mine-row" data-pk="${esc(k)}">${starBtn(name)}<b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
+      return {sortKey, name, nx, html:`<div class="mine-row" data-pk="${esc(k)}"><span class="star-static" aria-hidden="true">★</span><b class="mine-name">${esc(name)}</b>${rk?`<span class="rk">#${rk.r} ${rk.tour.toUpperCase()}</span>`:""}<div class="mine-info">${info}</div></div>`};
     }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey));
     const open = state.mineOpen;
     const first = rows.find(r=>r.nx);
@@ -799,6 +820,11 @@ footer{color:var(--muted);font-size:12px}
       if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
     });
     if (state.err){ app.innerHTML = `<div class="state">${esc(state.err)}</div>`; return; }
+    let tt = state.tour==="all" ? "" : state.tour;
+    if (h.startsWith("t-") && state.season){ const t = byId(h.slice(2)); if (t) tt = t.tour; }
+    if (tt) document.documentElement.setAttribute("data-tt", tt); else document.documentElement.removeAttribute("data-tt");
+    const tc = document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute("content", tt==="atp" ? "#2a30d0" : tt==="wta" ? "#1f0f47" : "#13283f");
     if (!state.season){ return; }
     let html;
     if (h.startsWith("t-")) html = viewTournament(h.slice(2));
