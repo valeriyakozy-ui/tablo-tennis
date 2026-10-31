@@ -61,7 +61,7 @@ button{font:inherit;color:inherit}
 .nav{display:flex;gap:4px;margin-left:auto}
 .nav a{text-decoration:none;padding:7px 12px;border-radius:999px;font-size:14px;font-weight:500;color:var(--board-muted)}
 .nav a[aria-current="page"]{background:var(--board-ink);color:var(--board)}
-.nav a:hover{color:var(--board-ink)}
+@media (hover:hover){.nav a:not([aria-current="page"]):hover{color:var(--board-ink)}}
 .stamp{font-size:12px;color:var(--board-muted);width:100%;display:flex;flex-wrap:wrap;gap:2px 16px}
 .chip-sub{margin-left:8px;font-weight:600}
 .rk{font-size:11px;color:var(--muted);margin-left:6px;font-weight:500;white-space:nowrap}
@@ -80,7 +80,8 @@ table.rank td.pos{font-family:var(--f-display);font-weight:600;font-size:17px;wi
 table.rank td.pt{color:var(--muted);white-space:nowrap}
 table.rank tr.prow:nth-child(-n+20) .pname{font-weight:600}
 .pname{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
-.pname:hover,.pname[aria-expanded="true"]{color:var(--accent);text-decoration-color:currentColor}
+.pname[aria-expanded="true"]{color:var(--accent);text-decoration-color:currentColor}
+@media (hover:hover){.pname:hover{color:var(--accent);text-decoration-color:currentColor}}
 td.mvc{width:3.2em;padding-left:0}
 .mv{font-size:11px;font-weight:600;white-space:nowrap}
 .mv.up,.dp.up{color:var(--done)}
@@ -95,12 +96,19 @@ tr.pdetail td{background:var(--surface);padding:12px 14px 14px;border-bottom:1px
 .pd-list li{display:grid;grid-template-columns:6.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
 .pd-list li:last-child{border-bottom:0}
 .pd-name{font-weight:600;text-decoration:none;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.pd-name:hover{text-decoration:underline;text-underline-offset:3px}
+@media (hover:hover){.pd-name:hover{text-decoration:underline;text-underline-offset:3px}}
 [data-g="gs"]{color:var(--c-gs)!important}
 [data-g="1000"]{color:var(--c-1000)!important}
 [data-g="500"]{color:var(--c-500)!important}
 [data-g="250"]{color:var(--c-250)!important}
 [data-g="finals"]{color:var(--c-fin)!important}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.pick{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;cursor:pointer;color:var(--ink)}
+.pick .tour{font-size:28px}
+.pick-sub{font-size:13px;color:var(--muted)}
+.pick ol{margin:6px 0 2px;padding-left:1.4em;display:flex;flex-direction:column;gap:2px;font-weight:500}
+.pick-go{font-size:14px;color:var(--accent);font-weight:600}
+@media (hover:hover){.pick:hover{border-color:var(--accent)}}
 .legend{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;font-size:14px}
 .legend span{font-weight:600}
 .legend .hint{font-weight:400}
@@ -146,7 +154,7 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 /* live tournament cards */
 .live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;text-decoration:none;min-width:0}
-.tcard:hover{border-color:var(--accent)}
+@media (hover:hover){.tcard:hover{border-color:var(--accent)}}
 .tcard h3{font-size:22px}
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .pill{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
@@ -175,7 +183,7 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .month h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;border-bottom:2px solid var(--ink)}
 .trow{display:grid;grid-template-columns:118px minmax(0,1.3fr) minmax(0,1fr);gap:4px 16px;padding:11px 2px;border-bottom:1px solid var(--line);text-decoration:none;align-items:start}
-.trow:hover .tname{color:var(--accent)}
+@media (hover:hover){.trow:hover .tname{color:var(--accent)}}
 .trow .dates{font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.2}
 .trow .tname{font-weight:600}
 .trow .meta{font-size:13px;color:var(--muted)}
@@ -186,7 +194,7 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 
 /* tournament page */
 .back{font-size:14px;color:var(--muted);text-decoration:none}
-.back:hover{color:var(--accent)}
+@media (hover:hover){.back:hover{color:var(--accent)}}
 .thead{display:flex;flex-direction:column;gap:10px}
 .facts{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
 .facts div{display:flex;flex-direction:column}
@@ -205,10 +213,10 @@ h2{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
 .colhead{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:2px 2px 6px;margin-bottom:2px;cursor:pointer;text-align:left}
 .colhead b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
 .colhead span{font-size:12px;color:var(--muted)}
-.colhead:hover span{color:var(--accent)}
+@media (hover:hover){.colhead:hover span{color:var(--accent)}}
 .colhead[data-now="1"] b{color:var(--accent)}
 .bcol-c{flex:0 0 46px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0;background:var(--sunk);border:1px dashed var(--line);border-radius:8px;cursor:pointer;color:var(--muted)}
-.bcol-c:hover{border-color:var(--accent);color:var(--accent)}
+@media (hover:hover){.bcol-c:hover{border-color:var(--accent);color:var(--accent)}}
 .bcol-c .v{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;gap:10px;align-items:center;white-space:nowrap}
 .bcol-c b{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
 .bcol-c small{font-size:12px}
@@ -529,8 +537,14 @@ footer{color:var(--muted);font-size:12px}
     }
     return map;
   }
+  function viewPickTour(){
+    const card = tour => { const rk = state.rankings[tour]; const top = rk ? rk.list.slice(0,3) : [];
+      return `<button class="pick" type="button" data-pick-tour="${tour}"><span class="tour" data-t="${tour}">${tour.toUpperCase()}</span><span class="pick-sub">${tour==="wta"?"женский тур":"мужской тур"}</span>${top.length?`<ol>${top.map(x=>`<li>${esc(x.n)}</li>`).join("")}</ol>`:""}<span class="pick-go">Открыть рейтинг</span></button>`; };
+    return `<section class="sec"><div class="sec-head"><h1>Рейтинг</h1></div><p class="hint">Выберите тур, чтобы открыть его рейтинг.</p><div class="pick-grid">${card("atp")}${card("wta")}</div></section>`;
+  }
   function viewRank(){
-    const tours = state.tour==="all" ? ["atp","wta"] : [state.tour];
+    if (state.tour==="all") return viewPickTour();
+    const tours = [state.tour];
     const playing = playingNow();
     const move = x => x.new ? `<span class="mv new" title="Новичок в топ-100">new</span>`
       : x.d > 0 ? `<span class="mv up" title="Выше официального рейтинга на ${x.d}">▲${x.d}</span>`
@@ -597,6 +611,8 @@ footer{color:var(--muted);font-size:12px}
       <p class="hint">Турниры основного тура сезона 2026. Для турниров с сеткой в приложении видны все круги, для остальных результаты начиная с 1/4 финала.</p></div>`;
   }
   app.addEventListener("click", e=>{
+    const pt = e.target.closest("[data-pick-tour]");
+    if (pt){ state.tour = pt.dataset.pickTour; try{localStorage.setItem("tablo-tour",state.tour)}catch(err){} paintTours(); route(); window.scrollTo(0,0); return; }
     const b = e.target.closest(".pname"); if (!b) return;
     const row = b.closest("tr"), det = row.nextElementSibling;
     const open = b.getAttribute("aria-expanded")==="true";
